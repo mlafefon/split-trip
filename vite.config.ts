@@ -28,8 +28,8 @@ export default defineConfig(({mode}) => {
           background_color: '#ffffff',
           display: 'standalone',
           orientation: 'portrait',
-          scope: '/split-trip/',
-          start_url: '/split-trip/',
+          scope: repoName ,
+          start_url: repoName ,
           icons: [
             {
               src: 'pwa-icon.svg',
