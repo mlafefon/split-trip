@@ -7,8 +7,10 @@ import {defineConfig, loadEnv} from 'vite';
 export default defineConfig(({mode}) => {
   
   const env = loadEnv(mode, '.', '');
-  const base = '/split-trip/';
+  const repoName = '/split-trip/';
+ //const base = '/split-trip/';
   return {
+    base = repoName;
     plugins: [
       react(), 
       tailwindcss(),
