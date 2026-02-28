@@ -65,7 +65,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
   const [singlePayer, setSinglePayer] = useState(
     (initialExpense?.payers && initialExpense.payers.length === 1) 
       ? initialExpense.payers[0].participantId 
-      : (initialExpense as any)?.paidBy || trip.participants[0]?.id || ''
+      : (initialExpense as any)?.paidBy || ''
   );
   const [multiPayers, setMultiPayers] = useState<Record<string, string>>({});
 
@@ -123,6 +123,11 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
 
     if (!tag) {
       alert('חובה לבחור קטגוריה');
+      return;
+    }
+
+    if (payerMode === 'SINGLE' && !singlePayer) {
+      alert('חובה לבחור מי שילם');
       return;
     }
 
@@ -286,7 +291,8 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-left"
+                dir="ltr"
                 placeholder="0.00"
               />
               <div className="relative w-28">
@@ -304,7 +310,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
               </div>
             </div>
             {currency !== trip.tripCurrency && (
-              <div className="text-xs text-slate-500 mt-1 px-1 flex items-center gap-1">
+              <div className="text-xs text-slate-500 mt-1 px-1 flex items-center gap-1" dir="ltr">
                  {isFetchingRate ? (
                    <>
                      <Loader2 className="w-3 h-3 animate-spin"/>
@@ -351,6 +357,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
             }}
             className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none mb-3"
           >
+            <option value="" hidden>בחר משתתף...</option>
             {trip.participants.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             <option value="MULTIPLE">מספר משתתפים</option>
           </select>
@@ -367,14 +374,15 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
                       step="0.01"
                       value={multiPayers[p.id] || ''}
                       onChange={(e) => setMultiPayers({...multiPayers, [p.id]: e.target.value})}
-                      className="w-full p-2 pl-8 border border-slate-200 rounded-lg text-left"
+                      className="w-full p-2 pl-12 border border-slate-200 rounded-lg text-left"
+                      dir="ltr"
                       placeholder="0.00"
                     />
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{currency}</span>
                   </div>
                 </div>
               ))}
-              <div className="text-xs text-slate-500 text-left mt-2">
+              <div className="text-xs text-slate-500 text-left mt-2" dir="ltr">
                 סה"כ שולם: {Object.values(multiPayers).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0).toFixed(2)} / {amount || '0.00'}
               </div>
             </div>
@@ -474,23 +482,24 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
                           step="0.01"
                           value={exactSplits[p.id] || ''}
                           onChange={(e) => setExactSplits({...exactSplits, [p.id]: e.target.value})}
-                          className={`w-full p-2 pl-8 border rounded-lg text-left outline-none transition-colors ${
+                          className={`w-full p-2 pl-12 border rounded-lg text-left outline-none transition-colors ${
                             isOverLimit 
                               ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
                               : 'border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
                           }`}
+                          dir="ltr"
                           placeholder="0.00"
                         />
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{currency}</span>
                       </div>
                     </div>
-                    <div className={`text-[10px] text-left pl-1 ${isOverLimit ? 'text-red-500 font-medium' : 'text-slate-400'}`}>
+                    <div className={`text-[10px] text-left pl-1 ${isOverLimit ? 'text-red-500 font-medium' : 'text-slate-400'}`} dir="ltr">
                       מקסימום: {maxAllowed.toFixed(2)}
                     </div>
                   </div>
                 );
               })}
-              <div className="text-xs text-slate-500 text-left mt-2 pt-2 border-t border-slate-200">
+              <div className="text-xs text-slate-500 text-left mt-2 pt-2 border-t border-slate-200" dir="ltr">
                 סה"כ חולק: {Object.values(exactSplits).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0).toFixed(2)} / {amount || '0.00'}
               </div>
             </div>

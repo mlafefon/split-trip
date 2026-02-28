@@ -4,6 +4,7 @@ import { AddExpense } from './AddExpense';
 import { AddTransfer } from './AddTransfer';
 import { TripForm } from './TripForm';
 import { Balances } from './Balances';
+import { ExpenseDetails } from './ExpenseDetails';
 import { Receipt, Users, ArrowRightLeft, Plus, Trash2, Pencil, Loader2 } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { fetchExchangeRates } from '../utils/currency';
@@ -21,6 +22,7 @@ export const TripView = ({ trip, updateTrip }: Props) => {
   const [addMode, setAddMode] = useState<'NONE' | 'EXPENSE' | 'TRANSFER'>('NONE');
   const [showMenu, setShowMenu] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [viewingExpenseId, setViewingExpenseId] = useState<string | null>(null);
   const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
@@ -126,6 +128,27 @@ export const TripView = ({ trip, updateTrip }: Props) => {
     }
   }
 
+  if (viewingExpenseId) {
+    const expenseToView = trip.expenses.find(e => e.id === viewingExpenseId);
+    if (expenseToView) {
+      return (
+        <ExpenseDetails 
+          trip={trip}
+          expense={expenseToView}
+          onEdit={() => {
+            setViewingExpenseId(null);
+            setEditingExpenseId(expenseToView.id);
+          }}
+          onDelete={() => {
+            setViewingExpenseId(null);
+            setDeleteExpenseId(expenseToView.id);
+          }}
+          onClose={() => setViewingExpenseId(null)}
+        />
+      );
+    }
+  }
+
   return (
     <div className="space-y-6">
       <ConfirmDialog 
@@ -147,7 +170,7 @@ export const TripView = ({ trip, updateTrip }: Props) => {
         </button>
         
         <div className="text-indigo-100 text-sm mb-1">סה"כ הוצאות בטיול</div>
-        <div className="text-4xl font-bold mb-2">
+        <div className="text-4xl font-bold mb-2" dir="ltr">
           {totalSpent.toFixed(2)} <span className="text-2xl">{trip.tripCurrency}</span>
         </div>
         {trip.baseCurrency !== trip.tripCurrency && (
@@ -158,11 +181,11 @@ export const TripView = ({ trip, updateTrip }: Props) => {
                 <span>מעדכן שער חליפין...</span>
               </div>
             ) : (
-              <>
+              <div dir="ltr" className="flex items-center gap-2">
                 ≈ {(totalSpent * (exchangeRate || 1)).toFixed(2)} {trip.baseCurrency} 
                 <span className="mx-2 opacity-50">|</span>
                 <span className="opacity-70">1 {trip.tripCurrency} = {exchangeRate?.toFixed(2)} {trip.baseCurrency}</span>
-              </>
+              </div>
             )}
           </div>
         )}
@@ -220,7 +243,11 @@ export const TripView = ({ trip, updateTrip }: Props) => {
                   }
 
                   return (
-                    <div key={expense.id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
+                    <div 
+                      key={expense.id} 
+                      onClick={() => setViewingExpenseId(expense.id)}
+                      className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition-colors"
+                    >
                       <div>
                         <div className="font-bold text-slate-800">{expense.description}</div>
                         <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
@@ -232,7 +259,7 @@ export const TripView = ({ trip, updateTrip }: Props) => {
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
-                        <div className="text-left">
+                        <div className="text-left" dir="ltr">
                           {expense.originalCurrency && expense.originalCurrency !== trip.tripCurrency && expense.exchangeRate ? (
                             <>
                               <div className="font-bold text-slate-800">
@@ -245,17 +272,9 @@ export const TripView = ({ trip, updateTrip }: Props) => {
                           ) : (
                             <div className="font-bold text-slate-800">{expense.amount.toFixed(2)} {trip.tripCurrency}</div>
                           )}
-                          <div className="text-xs text-slate-400">
+                          <div className="text-xs text-slate-400 text-right" dir="rtl">
                             {new Date(expense.date).toLocaleDateString('en-GB')}
                           </div>
-                        </div>
-                        <div className="flex gap-1">
-                          <button onClick={() => setEditingExpenseId(expense.id)} className="text-slate-300 hover:text-indigo-500 p-1">
-                            <Pencil className="w-4 h-4" />
-                          </button>
-                          <button onClick={() => handleDeleteExpense(expense.id)} className="text-slate-300 hover:text-red-500 p-1">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
                         </div>
                       </div>
                     </div>

@@ -114,7 +114,8 @@ export const AddTransfer = ({ trip, onSave, onCancel }: Props) => {
                 step="0.01"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-left"
+                dir="ltr"
                 placeholder="0.00"
               />
               <select
@@ -156,10 +157,11 @@ export const AddTransfer = ({ trip, onSave, onCancel }: Props) => {
                 step="0.0001"
                 value={exchangeRate}
                 onChange={(e) => setExchangeRate(e.target.value)}
-                className="w-full p-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none"
+                className="w-full p-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-left"
+                dir="ltr"
                 placeholder="1.00"
               />
-              <div className="text-sm text-orange-600 whitespace-nowrap">
+              <div className="text-sm text-orange-600 whitespace-nowrap" dir="ltr">
                 = {(parseFloat(amount || '0') * parseFloat(exchangeRate || '0')).toFixed(2)} {trip.tripCurrency}
               </div>
             </div>

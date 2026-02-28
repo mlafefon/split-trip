@@ -3,6 +3,7 @@ import { TripList } from './components/TripList';
 import { TripView } from './components/TripView';
 import { TripForm } from './components/TripForm';
 import { useTrips } from './hooks/useTrips';
+import { ChevronRight } from 'lucide-react';
 
 export default function App() {
   const { trips, addTrip, updateTrip, deleteTrip } = useTrips();
@@ -24,9 +25,10 @@ export default function App() {
                 setCurrentTripId(null);
                 setIsCreating(false);
               }}
-              className="absolute right-0 text-white/80 hover:text-white text-sm font-medium"
+              className="absolute right-0 p-1 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+              title="חזור"
             >
-              חזור
+              <ChevronRight className="w-6 h-6" />
             </button>
           )}
         </div>

@@ -73,17 +73,19 @@ export const Balances = ({ trip, view, exchangeRate }: Props) => {
             return (
               <div key={id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
                 <div className="font-bold text-slate-800">{getParticipantName(id)}</div>
-                <div className={`text-left ${isPositive ? 'text-emerald-600' : isNegative ? 'text-red-500' : 'text-slate-400'}`}>
+                <div className={`text-left ${isPositive ? 'text-emerald-600' : isNegative ? 'text-red-500' : 'text-slate-400'}`} dir="ltr">
                   <div className="font-bold">
                     {isPositive ? '+' : ''}{balance.toFixed(2)} {trip.tripCurrency}
                   </div>
-                  {exchangeRate && trip.baseCurrency !== trip.tripCurrency && !isZero && (
-                    <div className="text-xs opacity-60">
-                      ≈ {isPositive ? '+' : ''}{(balance * exchangeRate).toFixed(2)} {trip.baseCurrency}
-                    </div>
-                  )}
-                  <div className="text-xs opacity-80">
-                    {isPositive ? 'חייבים לו' : isNegative ? 'חייב לאחרים' : 'מאוזן'}
+                  <div className="text-xs mt-0.5 flex items-center gap-2">
+                    {exchangeRate && trip.baseCurrency !== trip.tripCurrency && !isZero && (
+                      <span className="opacity-60">
+                        ≈ {isPositive ? '+' : ''}{(balance * exchangeRate).toFixed(2)} {trip.baseCurrency}
+                      </span>
+                    )}
+                    <span className="opacity-80">
+                      {isPositive ? 'חייבים לו' : isNegative ? 'חייב לאחרים' : 'מאוזן'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -133,7 +135,7 @@ export const Balances = ({ trip, view, exchangeRate }: Props) => {
                         </div>
                         <span className="text-slate-700">{cat.name}</span>
                       </div>
-                      <div className="text-slate-500">
+                      <div className="text-slate-500" dir="ltr">
                         {cat.value.toFixed(2)} {trip.tripCurrency} ({((cat.value / totalCategoryExpenses) * 100).toFixed(1)}%)
                       </div>
                     </div>
@@ -173,7 +175,7 @@ export const Balances = ({ trip, view, exchangeRate }: Props) => {
                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
                       <span className="text-slate-700">{p.name}</span>
                     </div>
-                    <div className="text-slate-500">
+                    <div className="text-slate-500" dir="ltr">
                       {p.value.toFixed(2)} {trip.tripCurrency} ({((p.value / totalExpenses) * 100).toFixed(1)}%)
                     </div>
                   </div>
@@ -210,7 +212,7 @@ export const Balances = ({ trip, view, exchangeRate }: Props) => {
             {getParticipantName(t.from)}
           </div>
           
-          <div className="flex flex-col items-center text-indigo-600 px-2">
+          <div className="flex flex-col items-center text-indigo-600 px-2" dir="ltr">
             <div className="font-bold whitespace-nowrap">{t.amount.toFixed(2)} {trip.tripCurrency}</div>
             <ArrowLeft className="w-5 h-5 my-1" />
             {exchangeRate && trip.baseCurrency !== trip.tripCurrency && (

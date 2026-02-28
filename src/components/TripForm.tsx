@@ -182,6 +182,7 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
                       onChange={(e) => setEditingName(e.target.value)}
                       className="w-24 p-1 text-sm border border-indigo-200 rounded focus:outline-none focus:border-indigo-500 bg-white"
                       autoFocus
+                      onFocus={(e) => e.target.select()}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
