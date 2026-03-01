@@ -1,6 +1,6 @@
 import { Trip, Expense } from '../types';
 import { ICON_MAP } from '../utils/categories';
-import { ArrowRightLeft, Pencil, Trash2, X, Calendar, User, Users } from 'lucide-react';
+import { ArrowRightLeft, Pencil, Trash2, X, Calendar, User, Users, FileText } from 'lucide-react';
 
 type Props = {
   trip: Trip;
@@ -27,7 +27,7 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose }: Pro
     ((expense as any).paidBy ? [{ participantId: (expense as any).paidBy, amount: expense.amount }] : []);
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 max-h-[80vh] overflow-y-auto relative">
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative">
       <button 
         onClick={onClose}
         className="absolute top-4 left-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
@@ -89,6 +89,19 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose }: Pro
             ))}
           </div>
         </div>
+
+        {/* Notes Section */}
+        {expense.notes && (
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              הערות
+            </h3>
+            <div className="bg-slate-50 rounded-xl p-4 text-slate-700 whitespace-pre-wrap">
+              {expense.notes}
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-3 mt-8 pt-4 border-t border-slate-100">

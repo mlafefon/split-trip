@@ -50,6 +50,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
   });
 
   const [tag, setTag] = useState(initialExpense?.tag || '');
+  const [notes, setNotes] = useState(initialExpense?.notes || '');
   const [showCategoryEditor, setShowCategoryEditor] = useState(false);
 
   const [date, setDate] = useState(
@@ -358,7 +359,8 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
       splits: finalSplits,
       tag,
       originalCurrency: currency,
-      exchangeRate: rate
+      exchangeRate: rate,
+      notes: notes.trim()
     };
 
     onSave(expense);
@@ -669,6 +671,17 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
               סה"כ: {Object.values(splitValues).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0).toFixed(2)} / {splitMode === 'EXACT' ? (amount || '0.00') : '100%'}
             </div>
           </div>
+        </div>
+
+        {/* Notes */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">הערות</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none h-24"
+            placeholder="הוסף הערות להוצאה זו..."
+          />
         </div>
 
         <div className="flex gap-3 pt-4">

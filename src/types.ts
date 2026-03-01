@@ -20,6 +20,7 @@ export type Expense = {
   tag: string;
   originalCurrency?: string;
   exchangeRate?: number;
+  notes?: string;
 };
 
 export type Category = {

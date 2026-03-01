@@ -15,7 +15,7 @@ export const AddTransfer = ({ trip, onSave, onCancel }: Props) => {
   const [exchangeRate, setExchangeRate] = useState('1');
   const [senderId, setSenderId] = useState('');
   const [receiverId, setReceiverId] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [notes, setNotes] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,12 +43,13 @@ export const AddTransfer = ({ trip, onSave, onCancel }: Props) => {
       id: crypto.randomUUID(),
       description: `העברה מ${sender.name} ל${receiver.name}`,
       amount: finalAmountInTripCurrency,
-      date: new Date(date).toISOString(),
+      date: new Date().toISOString(),
       payers: [{ participantId: senderId, amount: finalAmountInTripCurrency }],
       splits: [{ participantId: receiverId, amount: finalAmountInTripCurrency }],
       tag: 'העברה',
       originalCurrency: currency,
-      exchangeRate: rate
+      exchangeRate: rate,
+      notes: notes.trim()
     };
 
     onSave(expense);
@@ -103,7 +104,7 @@ export const AddTransfer = ({ trip, onSave, onCancel }: Props) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">סכום</label>
             <div className="flex gap-2">
@@ -132,14 +133,14 @@ export const AddTransfer = ({ trip, onSave, onCancel }: Props) => {
               </select>
             </div>
           </div>
+          
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">תאריך</label>
-            <input 
-              type="date" 
-              required
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+            <label className="block text-sm font-medium text-slate-700 mb-1">הערות</label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none h-24"
+              placeholder="הוסף הערות להעברה זו..."
             />
           </div>
         </div>
