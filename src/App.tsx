@@ -15,7 +15,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-24" dir="rtl">
       <header className="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-20">
-        <div className="max-w-md mx-auto flex items-center justify-center relative">
+        <div className="max-w-xl mx-auto flex items-center justify-center relative">
           <h1 className="text-xl font-bold">
             {currentTrip ? currentTrip.destination : isCreating ? 'טיול חדש' : 'ניהול תקציב טיולים'}
           </h1>
@@ -34,7 +34,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="p-4 max-w-md mx-auto mt-2">
+      <main className="p-4 max-w-xl mx-auto mt-2">
         {isCreating ? (
           <TripForm 
             onSave={(trip) => {
