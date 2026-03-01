@@ -7,8 +7,9 @@ import {defineConfig, loadEnv} from 'vite';
 export default defineConfig(({mode}) => {
   
   const env = loadEnv(mode, '.', '');
-  const base = '/split-trip/';
+  const baseurl = '/split-trip/';
   return {
+    base: baseurl,
     plugins: [
       react(), 
       tailwindcss(),
@@ -26,8 +27,8 @@ export default defineConfig(({mode}) => {
           background_color: '#ffffff',
           display: 'standalone',
           orientation: 'portrait',
-          scope: base,
-          start_url: base,
+          scope: baseurl,
+          start_url: baseurl,
           icons: [
             {
               src: 'pwa-icon.svg',
