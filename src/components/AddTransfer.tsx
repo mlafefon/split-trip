@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trip, Expense } from '../types';
-import { ArrowLeft } from 'lucide-react';
-import { CURRENCIES } from '../utils/currency';
+import { ArrowLeft, Loader2, ChevronDown } from 'lucide-react';
+import { CURRENCIES, fetchExchangeRates } from '../utils/currency';
 
 type Props = {
   trip: Trip;
@@ -13,9 +13,29 @@ export const AddTransfer = ({ trip, onSave, onCancel }: Props) => {
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState(trip.tripCurrency);
   const [exchangeRate, setExchangeRate] = useState('1');
+  const [isFetchingRate, setIsFetchingRate] = useState(false);
   const [senderId, setSenderId] = useState('');
   const [receiverId, setReceiverId] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Fetch exchange rate when currency changes
+  useEffect(() => {
+    const updateRate = async () => {
+      if (currency === trip.tripCurrency) {
+        setExchangeRate('1');
+        return;
+      }
+
+      setIsFetchingRate(true);
+      const rates = await fetchExchangeRates(currency);
+      if (rates && rates[trip.tripCurrency]) {
+        setExchangeRate(rates[trip.tripCurrency].toString());
+      }
+      setIsFetchingRate(false);
+    };
+
+    updateRate();
+  }, [currency, trip.tripCurrency]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,19 +139,35 @@ export const AddTransfer = ({ trip, onSave, onCancel }: Props) => {
                 dir="ltr"
                 placeholder="0.00"
               />
-              <select
-                value={currency}
-                onChange={(e) => {
-                  setCurrency(e.target.value);
-                  if (e.target.value === trip.tripCurrency) {
-                    setExchangeRate('1');
-                  }
-                }}
-                className="w-24 p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none bg-white"
-              >
-                {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
-              </select>
+              <div className="relative w-28">
+                <div className="absolute inset-0 w-full h-full pointer-events-none flex items-center justify-between px-3 border border-slate-200 rounded-xl bg-white">
+                  <span className="font-medium text-sm text-slate-700">{currency}</span>
+                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                </div>
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="w-full h-full opacity-0 cursor-pointer"
+                >
+                  {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} - {c.name}</option>)}
+                </select>
+              </div>
             </div>
+            {currency !== trip.tripCurrency && (
+              <div className="text-xs text-slate-500 mt-1 px-1 flex items-center gap-1" dir="ltr">
+                 {isFetchingRate ? (
+                   <>
+                     <Loader2 className="w-3 h-3 animate-spin"/>
+                     <span>מעדכן שער...</span>
+                   </>
+                 ) : (
+                   <span>
+                     ≈ {(parseFloat(amount || '0') * parseFloat(exchangeRate || '0')).toFixed(2)} {trip.tripCurrency}
+                     <span className="opacity-70 mx-1">(1 {currency} = {parseFloat(exchangeRate || '0').toFixed(2)} {trip.tripCurrency})</span>
+                   </span>
+                 )}
+              </div>
+            )}
           </div>
           
           <div>
@@ -144,30 +180,6 @@ export const AddTransfer = ({ trip, onSave, onCancel }: Props) => {
             />
           </div>
         </div>
-
-        {currency !== trip.tripCurrency && (
-          <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 animate-in fade-in slide-in-from-top-2">
-            <label className="block text-sm font-medium text-orange-800 mb-1">
-              שער המרה (1 {currency} = ? {trip.tripCurrency})
-            </label>
-            <div className="flex items-center gap-2">
-              <input 
-                type="number" 
-                required
-                min="0.0001"
-                step="0.0001"
-                value={exchangeRate}
-                onChange={(e) => setExchangeRate(e.target.value)}
-                className="w-full p-3 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-left"
-                dir="ltr"
-                placeholder="1.00"
-              />
-              <div className="text-sm text-orange-600 whitespace-nowrap" dir="ltr">
-                = {(parseFloat(amount || '0') * parseFloat(exchangeRate || '0')).toFixed(2)} {trip.tripCurrency}
-              </div>
-            </div>
-          </div>
-        )}
 
         <div className="flex gap-3 pt-4">
           <button 

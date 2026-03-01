@@ -399,8 +399,10 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
                     key={cat.id}
                     type="button"
                     onClick={() => {
+                      if (!description || description === tag) {
+                        setDescription(cat.name);
+                      }
                       setTag(cat.name);
-                      setDescription(cat.name);
                     }}
                     className={`flex flex-col items-center gap-1 p-1 rounded-xl transition-all ${isSelected ? 'scale-110' : 'opacity-70 hover:opacity-100'}`}
                     title={cat.name}
