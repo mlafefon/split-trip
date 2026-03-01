@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trip, Expense, ExpenseSplit, Category } from '../types';
-import { Check, Plus, Settings, Loader2, ChevronDown } from 'lucide-react';
+import { Check, Plus, Settings, Loader2, ChevronDown, Lock } from 'lucide-react';
 import { CURRENCIES, fetchExchangeRates } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
 import { CategoryEditor } from './CategoryEditor';
@@ -70,49 +70,217 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
   const [multiPayers, setMultiPayers] = useState<Record<string, string>>({});
 
   // Split state
-  const [splitType, setSplitType] = useState<'EQUAL' | 'EXACT'>(
-    // Heuristic: if amounts are not roughly equal, assume EXACT
-    initialExpense?.splits && initialExpense.splits.length > 0 && 
-    !initialExpense.splits.every(s => Math.abs(s.amount - initialExpense.splits[0].amount) < 0.01)
-      ? 'EXACT' 
-      : 'EQUAL'
-  );
+  const [splitMode, setSplitMode] = useState<'EXACT' | 'PERCENTAGE'>('EXACT');
   const [selectedBeneficiaries, setSelectedBeneficiaries] = useState<string[]>(
     initialExpense?.splits.map(s => s.participantId) || trip.participants.map(p => p.id)
   );
-  const [exactSplits, setExactSplits] = useState<Record<string, string>>({});
+  const [splitValues, setSplitValues] = useState<Record<string, string>>({});
+  const [manualSplitIds, setManualSplitIds] = useState<string[]>([]);
 
-  // Initialize multiPayers and exactSplits
+  // Initialize splitValues
   useEffect(() => {
-    const initialPayers: Record<string, string> = {};
     const initialSplits: Record<string, string> = {};
     const rate = initialExpense?.exchangeRate || 1;
-
-    trip.participants.forEach(p => {
-      initialPayers[p.id] = '';
-      initialSplits[p.id] = '';
-    });
-
-    if (initialExpense) {
-      // Populate payers
-      if (initialExpense.payers) {
-        initialExpense.payers.forEach(p => {
-          initialPayers[p.participantId] = (p.amount / rate).toFixed(2);
-        });
-      } else if ((initialExpense as any).paidBy) {
-        // Legacy support
-        initialPayers[(initialExpense as any).paidBy] = (initialExpense.amount / rate).toFixed(2);
-      }
-
-      // Populate splits
+    
+    if (initialExpense && initialExpense.splits.length > 0) {
+      // Load existing splits
       initialExpense.splits.forEach(s => {
         initialSplits[s.participantId] = (s.amount / rate).toFixed(2);
       });
+      // Ensure unselected have 0 or empty
+      trip.participants.forEach(p => {
+        if (!initialSplits[p.id]) initialSplits[p.id] = '0';
+      });
+    } else {
+      trip.participants.forEach(p => {
+        initialSplits[p.id] = '';
+      });
+    }
+    setSplitValues(initialSplits);
+  }, [trip.participants, initialExpense]);
+
+  // Helper to recalculate splits for auto-participants
+  const distributeRemaining = (
+    targetTotal: number,
+    currentSplits: Record<string, string>,
+    manuals: string[],
+    selected: string[]
+  ) => {
+    const newSplits = { ...currentSplits };
+    const autoParticipants = selected.filter(id => !manuals.includes(id));
+
+    if (autoParticipants.length === 0) return newSplits;
+
+    let manualSum = 0;
+    manuals.forEach(id => {
+      const val = parseFloat(newSplits[id] || '0');
+      if (!isNaN(val)) manualSum += val;
+    });
+
+    const remaining = targetTotal - manualSum;
+    const count = autoParticipants.length;
+    
+    // Distribute equally
+    const base = Math.floor((remaining / count) * 100) / 100;
+    const remainder = Number((remaining - (base * count)).toFixed(2));
+
+    autoParticipants.forEach((id, idx) => {
+      let val = base;
+      if (idx === 0) val = Number((val + remainder).toFixed(2));
+      newSplits[id] = val.toFixed(2);
+    });
+
+    return newSplits;
+  };
+
+  // Helper to calculate equal split (resets manuals)
+  const calculateEqualSplits = (totalAmount: number) => {
+    if (isNaN(totalAmount) || totalAmount <= 0 || selectedBeneficiaries.length === 0) return;
+
+    setManualSplitIds([]); // Reset manuals
+    
+    const count = selectedBeneficiaries.length;
+    const newSplits = { ...splitValues };
+    
+    // Reset unselected to 0
+    trip.participants.forEach(p => {
+      if (!selectedBeneficiaries.includes(p.id)) newSplits[p.id] = '0';
+    });
+
+    if (splitMode === 'EXACT') {
+      const baseAmount = Math.floor((totalAmount / count) * 100) / 100;
+      const remainder = Number((totalAmount - (baseAmount * count)).toFixed(2));
+      
+      selectedBeneficiaries.forEach((id, index) => {
+        let val = baseAmount;
+        if (index === 0) val = Number((val + remainder).toFixed(2));
+        newSplits[id] = val.toFixed(2);
+      });
+    } else {
+      // PERCENTAGE
+      const basePercent = Math.floor((100 / count) * 100) / 100;
+      const remainder = Number((100 - (basePercent * count)).toFixed(2));
+      
+      selectedBeneficiaries.forEach((id, index) => {
+        let val = basePercent;
+        if (index === 0) val = Number((val + remainder).toFixed(2));
+        newSplits[id] = val.toFixed(2);
+      });
+    }
+    setSplitValues(newSplits);
+  };
+
+  const handleEqualSplit = () => {
+    const total = parseFloat(amount);
+    calculateEqualSplits(total);
+  };
+
+  const handleSplitChange = (id: string, value: string) => {
+    // 1. Update the changed value
+    const newSplits = { ...splitValues, [id]: value };
+    
+    // 2. Update manual locks
+    let newManuals = [...manualSplitIds];
+    if (!newManuals.includes(id)) {
+      newManuals.push(id);
+    }
+    
+    // If all selected are manual, unlock the oldest one (first in array) that is NOT the current id
+    if (selectedBeneficiaries.length > 1 && newManuals.length >= selectedBeneficiaries.length) {
+      const firstOther = newManuals.find(mId => mId !== id);
+      if (firstOther) {
+        newManuals = newManuals.filter(mId => mId !== firstOther);
+      }
     }
 
-    setMultiPayers(initialPayers);
-    setExactSplits(initialSplits);
-  }, [trip.participants, initialExpense]);
+    setManualSplitIds(newManuals);
+
+    // 3. Distribute remaining
+    const total = splitMode === 'EXACT' ? parseFloat(amount || '0') : 100;
+    const distributedSplits = distributeRemaining(total, newSplits, newManuals, selectedBeneficiaries);
+    
+    setSplitValues(distributedSplits);
+  };
+
+  const toggleBeneficiary = (id: string) => {
+    let newSelected: string[];
+    let newManuals = [...manualSplitIds];
+
+    if (selectedBeneficiaries.includes(id)) {
+      // Removing
+      newSelected = selectedBeneficiaries.filter(bid => bid !== id);
+      newManuals = newManuals.filter(mid => mid !== id);
+      
+      // Clear value
+      const newSplits = { ...splitValues, [id]: '' };
+      
+      // If we removed a manual user, we might need to redistribute?
+      // Actually, we should always redistribute among remaining autos.
+      // If no autos left (all remaining are manual), unlock one.
+      if (newSelected.length > 0 && newManuals.length >= newSelected.length) {
+         // Unlock the first one
+         const toUnlock = newManuals[0];
+         newManuals = newManuals.filter(m => m !== toUnlock);
+      }
+      
+      setManualSplitIds(newManuals);
+      setSelectedBeneficiaries(newSelected);
+      
+      const total = splitMode === 'EXACT' ? parseFloat(amount || '0') : 100;
+      const distributed = distributeRemaining(total, newSplits, newManuals, newSelected);
+      setSplitValues(distributed);
+
+    } else {
+      // Adding
+      newSelected = [...selectedBeneficiaries, id];
+      setSelectedBeneficiaries(newSelected);
+      // New person is auto (not in manuals)
+      // Just redistribute
+      const total = splitMode === 'EXACT' ? parseFloat(amount || '0') : 100;
+      const distributed = distributeRemaining(total, splitValues, newManuals, newSelected);
+      setSplitValues(distributed);
+    }
+  };
+
+  // When switching modes, convert values
+  const handleModeChange = (newMode: 'EXACT' | 'PERCENTAGE') => {
+    const total = parseFloat(amount);
+    if (isNaN(total) || total <= 0) {
+      setSplitMode(newMode);
+      setSplitValues({}); // Clear if no amount
+      return;
+    }
+
+    const newValues: Record<string, string> = {};
+    
+    if (newMode === 'PERCENTAGE') {
+      // EXACT -> PERCENTAGE
+      Object.entries(splitValues).forEach(([id, val]) => {
+        const numVal = parseFloat(val as string);
+        if (!isNaN(numVal)) {
+          newValues[id] = ((numVal / total) * 100).toFixed(2);
+        } else {
+          newValues[id] = '0';
+        }
+      });
+    } else {
+      // PERCENTAGE -> EXACT
+      Object.entries(splitValues).forEach(([id, val]) => {
+        const numVal = parseFloat(val as string);
+        if (!isNaN(numVal)) {
+          newValues[id] = ((numVal / 100) * total).toFixed(2);
+        } else {
+          newValues[id] = '0';
+        }
+      });
+    }
+    
+    setSplitValues(newValues);
+    setSplitMode(newMode);
+  };
+
+  // ... handleSubmit logic needs update ...
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,24 +332,21 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
       return;
     }
 
-    if (splitType === 'EQUAL') {
-      const splitAmount = finalAmountInTripCurrency / selectedBeneficiaries.length;
-      finalSplits = selectedBeneficiaries.map(id => ({
-        participantId: id,
-        amount: splitAmount
-      }));
-    } else {
-      let totalSplit = 0;
-      finalSplits = selectedBeneficiaries.map(id => {
-        const val = parseFloat(exactSplits[id] || '0');
-        totalSplit += val;
-        return { participantId: id, amount: val * rate };
-      });
-
-      if (Math.abs(totalSplit - numAmount) > 0.01) {
-        alert(`סכום החלוקה (${totalSplit}) לא שווה לסכום ההוצאה (${numAmount})`);
-        return;
+    let totalSplit = 0;
+    finalSplits = selectedBeneficiaries.map(id => {
+      let val = parseFloat(splitValues[id] || '0');
+      
+      if (splitMode === 'PERCENTAGE') {
+        val = (val / 100) * numAmount;
       }
+      
+      totalSplit += val;
+      return { participantId: id, amount: val * rate };
+    });
+
+    if (Math.abs(totalSplit - numAmount) > 0.01) {
+      alert(`סכום החלוקה (${totalSplit.toFixed(2)}) לא שווה לסכום ההוצאה (${numAmount})`);
+      return;
     }
 
     const expense: Expense = {
@@ -197,14 +362,6 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
     };
 
     onSave(expense);
-  };
-
-  const toggleBeneficiary = (id: string) => {
-    if (selectedBeneficiaries.includes(id)) {
-      setSelectedBeneficiaries(selectedBeneficiaries.filter(bid => bid !== id));
-    } else {
-      setSelectedBeneficiaries([...selectedBeneficiaries, id]);
-    }
   };
 
   if (showCategoryEditor) {
@@ -290,7 +447,13 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
                 min="0.01"
                 step="0.01"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setAmount(val);
+                  if (splitMode === 'EXACT') {
+                    calculateEqualSplits(parseFloat(val));
+                  }
+                }}
                 className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-left"
                 dir="ltr"
                 placeholder="0.00"
@@ -367,7 +530,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
               {trip.participants.map(p => (
                 <div key={p.id} className="flex items-center justify-between gap-4">
                   <span className="text-sm font-medium text-slate-700">{p.name}</span>
-                  <div className="relative w-32">
+                  <div className="relative w-40">
                     <input
                       type="number"
                       min="0"
@@ -395,115 +558,117 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">איך מתחלקים?</label>
           
-          {/* Beneficiary Selection */}
-          <div className="mb-4">
-            <div className="text-xs text-slate-500 mb-2">עבור מי ההוצאה?</div>
-            <div className="flex flex-wrap gap-2">
-              {trip.participants.map(p => {
-                const isSelected = selectedBeneficiaries.includes(p.id);
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => toggleBeneficiary(p.id)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
-                      isSelected 
-                        ? 'bg-indigo-100 border-indigo-200 text-indigo-700' 
-                        : 'bg-white border-slate-200 text-slate-400'
-                    }`}
-                  >
-                    {p.name}
-                  </button>
-                );
-              })}
-              <button
-                type="button"
-                onClick={() => setSelectedBeneficiaries(trip.participants.map(p => p.id))}
-                className="px-3 py-1.5 rounded-full text-xs font-medium text-slate-500 hover:text-indigo-600 underline"
-              >
-                בחר הכל
-              </button>
-            </div>
-          </div>
-
+          {/* Controls */}
           <div className="flex gap-2 mb-4">
+            <div className="relative flex-1">
+               <select
+                 value={splitMode}
+                 onChange={(e) => handleModeChange(e.target.value as 'EXACT' | 'PERCENTAGE')}
+                 className="w-full p-2 border border-slate-200 rounded-lg bg-white text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
+               >
+                 <option value="EXACT">סכומים מדויקים</option>
+                 <option value="PERCENTAGE">חלוקה לפי אחוזים</option>
+               </select>
+            </div>
             <button
               type="button"
-              onClick={() => setSplitType('EQUAL')}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium border ${splitType === 'EQUAL' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600'}`}
+              onClick={handleEqualSplit}
+              className="px-4 py-2 bg-indigo-50 text-indigo-700 text-sm font-medium rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors"
             >
-              שווה בשווה
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setSplitType('EXACT');
-                const total = parseFloat(amount);
-                if (!isNaN(total) && total > 0 && selectedBeneficiaries.length > 0) {
-                  const newSplits: Record<string, string> = {};
-                  const count = selectedBeneficiaries.length;
-                  const baseAmount = Math.floor((total / count) * 100) / 100;
-                  const remainder = Number((total - (baseAmount * count)).toFixed(2));
-                  
-                  trip.participants.forEach(p => newSplits[p.id] = '');
-                  
-                  selectedBeneficiaries.forEach((id, index) => {
-                    let val = baseAmount;
-                    if (index === 0) val = Number((val + remainder).toFixed(2));
-                    newSplits[id] = val.toFixed(2);
-                  });
-                  setExactSplits(newSplits);
-                }
-              }}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium border ${splitType === 'EXACT' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-600'}`}
-            >
-              סכומים מדויקים
+              חלוקה שווה
             </button>
           </div>
 
-          {splitType === 'EXACT' && (
-            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-              {trip.participants.filter(p => selectedBeneficiaries.includes(p.id)).map(p => {
-                const currentVal = parseFloat(exactSplits[p.id] || '0');
-                const otherSum = Object.entries(exactSplits)
-                  .filter(([id]) => id !== p.id)
-                  .reduce((sum, [, val]) => sum + (parseFloat(val as string) || 0), 0);
-                const maxAllowed = Math.max(0, parseFloat(amount || '0') - otherSum);
-                const isOverLimit = currentVal > maxAllowed + 0.01; // Small epsilon for float comparison
+          <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+            {trip.participants.map(p => {
+              const isSelected = selectedBeneficiaries.includes(p.id);
+              const currentVal = parseFloat(splitValues[p.id] || '0');
+              
+              // Calculate remaining/max
+              const otherSum = Object.entries(splitValues)
+                .filter(([id]) => id !== p.id)
+                .reduce((sum, [, val]) => {
+                  const v = parseFloat(val as string) || 0;
+                  return sum + (v > 0 ? v : 0);
+                }, 0);
+              
+              const totalTarget = splitMode === 'EXACT' ? parseFloat(amount || '0') : 100;
+              const maxAllowed = Math.max(0, totalTarget - otherSum);
+              const isOverLimit = currentVal > maxAllowed + 0.01;
 
-                return (
-                  <div key={p.id} className="flex flex-col gap-1">
-                    <div className="flex items-center justify-between gap-4">
-                      <span className="text-sm font-medium text-slate-700">{p.name}</span>
-                      <div className="relative w-32">
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={exactSplits[p.id] || ''}
-                          onChange={(e) => setExactSplits({...exactSplits, [p.id]: e.target.value})}
-                          className={`w-full p-2 pl-12 border rounded-lg text-left outline-none transition-colors ${
-                            isOverLimit 
-                              ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
-                              : 'border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
-                          }`}
-                          dir="ltr"
-                          placeholder="0.00"
-                        />
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{currency}</span>
+              // Determine split amount text for percentage mode
+              let splitAmountText = '';
+              if (splitMode === 'PERCENTAGE' && isSelected) {
+                 const pct = parseFloat(splitValues[p.id] || '0');
+                 const total = parseFloat(amount || '0');
+                 if (!isNaN(pct) && !isNaN(total)) {
+                    const val = (pct / 100) * total;
+                    splitAmountText = `(${val.toFixed(2)} ${currency})`;
+                 }
+              }
+
+              const isManual = manualSplitIds.includes(p.id);
+
+              return (
+                <div 
+                  key={p.id} 
+                  className={`flex flex-col gap-1 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-50'}`}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div 
+                      className="flex items-center gap-3 cursor-pointer select-none flex-1"
+                      onClick={() => toggleBeneficiary(p.id)}
+                    >
+                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300'}`}>
+                        {isSelected && <Check className="w-3 h-3" />}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium text-slate-700">
+                          {p.name}
+                        </span>
+                        {splitAmountText && <span className="text-xs font-normal text-slate-500">{splitAmountText}</span>}
                       </div>
                     </div>
-                    <div className={`text-[10px] text-left pl-1 ${isOverLimit ? 'text-red-500 font-medium' : 'text-slate-400'}`} dir="ltr">
-                      מקסימום: {maxAllowed.toFixed(2)}
+                    
+                    <div className="relative w-40">
+                      <input
+                        type="number"
+                        min="0"
+                        step={splitMode === 'EXACT' ? "0.01" : "0.1"}
+                        value={splitValues[p.id] || ''}
+                        onChange={(e) => {
+                          if (!isSelected) toggleBeneficiary(p.id);
+                          handleSplitChange(p.id, e.target.value);
+                        }}
+                        className={`w-full p-2 pl-12 pr-8 border rounded-lg text-left outline-none transition-colors ${
+                          isOverLimit 
+                            ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
+                            : isManual
+                              ? 'border-amber-200 bg-amber-50 focus:border-amber-400 focus:ring-1 focus:ring-amber-400'
+                              : 'border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                        }`}
+                        dir="ltr"
+                        placeholder="0.00"
+                        disabled={!isSelected}
+                      />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
+                        {splitMode === 'EXACT' ? currency : '%'}
+                      </span>
+                      {isManual && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-400 pointer-events-none" title="סכום קבוע ידנית">
+                          <Lock className="w-3 h-3" />
+                        </span>
+                      )}
                     </div>
                   </div>
-                );
-              })}
-              <div className="text-xs text-slate-500 text-left mt-2 pt-2 border-t border-slate-200" dir="ltr">
-                סה"כ חולק: {Object.values(exactSplits).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0).toFixed(2)} / {amount || '0.00'}
-              </div>
+                </div>
+              );
+            })}
+            
+            <div className="text-xs text-slate-500 text-left mt-2 pt-2 border-t border-slate-200" dir="ltr">
+              סה"כ: {Object.values(splitValues).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0).toFixed(2)} / {splitMode === 'EXACT' ? (amount || '0.00') : '100%'}
             </div>
-          )}
+          </div>
         </div>
 
         <div className="flex gap-3 pt-4">
