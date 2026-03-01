@@ -6,7 +6,7 @@ import { TripForm } from './TripForm';
 import { Balances } from './Balances';
 import { Statistics } from './Statistics';
 import { ExpenseDetails } from './ExpenseDetails';
-import { Receipt, Users, BarChart3, Plus, Trash2, Pencil, Loader2, ArrowRightLeft } from 'lucide-react';
+import { Receipt, Users, BarChart3, Plus, Trash2, Pencil, Loader2, ArrowRightLeft, Search } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { fetchExchangeRates } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
@@ -28,6 +28,7 @@ export const TripView = ({ trip, updateTrip }: Props) => {
   const [isEditing, setIsEditing] = useState(false);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [isFetchingRate, setIsFetchingRate] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const getRates = async () => {
@@ -88,6 +89,25 @@ export const TripView = ({ trip, updateTrip }: Props) => {
   };
 
   const totalSpent = trip.expenses.reduce((sum, e) => sum + e.amount, 0);
+
+  const filteredExpenses = trip.expenses.filter(expense => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    
+    // Check description
+    if (expense.description.toLowerCase().includes(query)) return true;
+    
+    // Check tag
+    if (expense.tag?.toLowerCase().includes(query)) return true;
+    
+    // Check payer names
+    const payers = expense.payers || 
+      ((expense as any).paidBy ? [{ participantId: (expense as any).paidBy, amount: expense.amount }] : []);
+    const payerNames = payers.map(p => trip.participants.find(part => part.id === p.participantId)?.name || '');
+    if (payerNames.some(name => name.toLowerCase().includes(query))) return true;
+    
+    return false;
+  });
 
   if (isEditing) {
     return (
@@ -218,14 +238,33 @@ export const TripView = ({ trip, updateTrip }: Props) => {
       <div className="min-h-[300px]">
         {activeTab === 'EXPENSES' && (
           <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="relative">
+              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-slate-400" />
+              </div>
+              <input
+                type="text"
+                className="block w-full pr-10 pl-3 py-3 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                placeholder="חיפוש הוצאות..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+
             {trip.expenses.length === 0 ? (
               <div className="text-center py-12 text-slate-400">
                 <Receipt className="w-12 h-12 mx-auto mb-3 opacity-20" />
                 <p>אין עדיין הוצאות בטיול זה.</p>
               </div>
+            ) : filteredExpenses.length === 0 ? (
+              <div className="text-center py-12 text-slate-400">
+                <Search className="w-12 h-12 mx-auto mb-3 opacity-20" />
+                <p>לא נמצאו הוצאות התואמות לחיפוש.</p>
+              </div>
             ) : (
               <div className="space-y-3">
-                {trip.expenses.map(expense => {
+                {filteredExpenses.map(expense => {
                   const payers = expense.payers || 
                     ((expense as any).paidBy ? [{ participantId: (expense as any).paidBy, amount: expense.amount }] : []);
                   
