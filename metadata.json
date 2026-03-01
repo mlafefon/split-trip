@@ -1,5 +1,6 @@
 {
   "name": "ניהול תקציב טיולים",
   "description": "אפליקציה לניהול תקציב והוצאות בטיולים משותפים לחו\"ל",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "version":"1.0.6"
 }

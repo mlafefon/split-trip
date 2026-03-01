@@ -4,8 +4,9 @@ import { AddExpense } from './AddExpense';
 import { AddTransfer } from './AddTransfer';
 import { TripForm } from './TripForm';
 import { Balances } from './Balances';
+import { Statistics } from './Statistics';
 import { ExpenseDetails } from './ExpenseDetails';
-import { Receipt, Users, ArrowRightLeft, Plus, Trash2, Pencil, Loader2 } from 'lucide-react';
+import { Receipt, Users, BarChart3, Plus, Trash2, Pencil, Loader2, ArrowRightLeft } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { fetchExchangeRates } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
@@ -15,7 +16,7 @@ type Props = {
   updateTrip: (trip: Trip) => void;
 };
 
-type Tab = 'EXPENSES' | 'BALANCES' | 'SETTLEMENT';
+type Tab = 'EXPENSES' | 'BALANCES' | 'STATISTICS';
 
 export const TripView = ({ trip, updateTrip }: Props) => {
   const [activeTab, setActiveTab] = useState<Tab>('EXPENSES');
@@ -206,10 +207,10 @@ export const TripView = ({ trip, updateTrip }: Props) => {
           <Users className="w-4 h-4" /> יתרות
         </button>
         <button 
-          onClick={() => setActiveTab('SETTLEMENT')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'SETTLEMENT' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          onClick={() => setActiveTab('STATISTICS')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'STATISTICS' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
         >
-          <ArrowRightLeft className="w-4 h-4" /> התחשבנות
+          <BarChart3 className="w-4 h-4" /> סטטיסטיקות
         </button>
       </div>
 
@@ -337,11 +338,11 @@ export const TripView = ({ trip, updateTrip }: Props) => {
         )}
 
         {activeTab === 'BALANCES' && (
-          <Balances trip={trip} view="BALANCES" exchangeRate={exchangeRate} />
+          <Balances trip={trip} exchangeRate={exchangeRate} />
         )}
 
-        {activeTab === 'SETTLEMENT' && (
-          <Balances trip={trip} view="SETTLEMENT" exchangeRate={exchangeRate} />
+        {activeTab === 'STATISTICS' && (
+          <Statistics trip={trip} />
         )}
       </div>
     </div>
