@@ -6,7 +6,7 @@ import { TripForm } from './TripForm';
 import { Balances } from './Balances';
 import { Statistics } from './Statistics';
 import { ExpenseDetails } from './ExpenseDetails';
-import { Receipt, Users, BarChart3, Plus, Trash2, Pencil, Loader2, ArrowRightLeft, Search } from 'lucide-react';
+import { Receipt, Users, BarChart3, Plus, Trash2, Pencil, Loader2, ArrowRightLeft, Search, X } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { fetchExchangeRates } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
@@ -245,11 +245,19 @@ export const TripView = ({ trip, updateTrip }: Props) => {
               </div>
               <input
                 type="text"
-                className="block w-full pr-10 pl-3 py-3 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                className="block w-full pr-10 pl-10 py-3 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                 placeholder="חיפוש הוצאות..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute inset-y-0 left-0 pl-3 flex items-center cursor-pointer text-slate-400 hover:text-slate-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
             </div>
 
             {trip.expenses.length === 0 ? (
