@@ -547,7 +547,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
 
         {/* Who Paid Section */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">מי שילם?</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">{isTransfer ? 'מי מעביר?' : 'מי שילם?'}</label>
           
           <select 
             value={payerMode === 'MULTIPLE' ? 'MULTIPLE' : singlePayer}
@@ -760,7 +760,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
             type="submit"
             className="flex-1 bg-indigo-600 text-white p-3 rounded-xl font-medium hover:bg-indigo-700 transition-colors"
           >
-            {initialExpense ? 'עדכן הוצאה' : 'שמור הוצאה'}
+            {initialExpense ? (isTransfer ? 'עדכן העברה' : 'עדכן הוצאה') : (isTransfer ? 'שמור העברה' : 'שמור הוצאה')}
           </button>
           <button 
             type="button"
