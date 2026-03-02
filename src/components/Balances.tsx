@@ -5,9 +5,10 @@ import { ArrowLeft } from 'lucide-react';
 type Props = {
   trip: Trip;
   exchangeRate: number | null;
+  onSelectParticipant?: (id: string) => void;
 };
 
-export const Balances = ({ trip, exchangeRate }: Props) => {
+export const Balances = ({ trip, exchangeRate, onSelectParticipant }: Props) => {
   const balances = calculateBalances(trip);
   const getParticipantName = (id: string) => trip.participants.find(p => p.id === id)?.name || 'לא ידוע';
   const transactions = calculateSettlement(balances);
@@ -24,7 +25,11 @@ export const Balances = ({ trip, exchangeRate }: Props) => {
             const isZero = !isPositive && !isNegative;
 
             return (
-              <div key={id} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
+              <div 
+                key={id} 
+                onClick={() => onSelectParticipant?.(id)}
+                className={`bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center ${onSelectParticipant ? 'cursor-pointer hover:bg-slate-50 transition-colors' : ''}`}
+              >
                 <div className="font-bold text-slate-800">{getParticipantName(id)}</div>
                 <div className={`text-left ${isPositive ? 'text-emerald-600' : isNegative ? 'text-red-500' : 'text-slate-400'}`} dir="ltr">
                   <div className="font-bold">

@@ -5,6 +5,7 @@ import { TripForm } from './TripForm';
 import { Balances } from './Balances';
 import { Statistics } from './Statistics';
 import { ExpenseDetails } from './ExpenseDetails';
+import { ParticipantDetails } from './ParticipantDetails';
 import { Receipt, Users, BarChart3, Plus, Trash2, Pencil, Loader2, ArrowRightLeft, Search, X } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { fetchExchangeRates } from '../utils/currency';
@@ -24,6 +25,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler }: Props) => {
   const [showMenu, setShowMenu] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const [viewingExpenseId, setViewingExpenseId] = useState<string | null>(null);
+  const [viewingParticipantId, setViewingParticipantId] = useState<string | null>(null);
   const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
@@ -44,6 +46,10 @@ export const TripView = ({ trip, updateTrip, setBackHandler }: Props) => {
         setViewingExpenseId(null);
         return true;
       }
+      if (viewingParticipantId) {
+        setViewingParticipantId(null);
+        return true;
+      }
       if (isEditing) {
         setIsEditing(false);
         return true;
@@ -52,7 +58,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler }: Props) => {
     });
 
     return () => setBackHandler(null);
-  }, [addMode, editingExpenseId, viewingExpenseId, isEditing, setBackHandler]);
+  }, [addMode, editingExpenseId, viewingExpenseId, viewingParticipantId, isEditing, setBackHandler]);
 
   useEffect(() => {
     const getRates = async () => {
@@ -200,6 +206,17 @@ export const TripView = ({ trip, updateTrip, setBackHandler }: Props) => {
         />
       );
     }
+  }
+
+  if (viewingParticipantId) {
+    return (
+      <ParticipantDetails 
+        trip={trip}
+        participantId={viewingParticipantId}
+        onClose={() => setViewingParticipantId(null)}
+        onSelectExpense={setViewingExpenseId}
+      />
+    );
   }
 
   return (
@@ -417,7 +434,11 @@ export const TripView = ({ trip, updateTrip, setBackHandler }: Props) => {
         )}
 
         {activeTab === 'BALANCES' && (
-          <Balances trip={trip} exchangeRate={exchangeRate} />
+          <Balances 
+            trip={trip} 
+            exchangeRate={exchangeRate} 
+            onSelectParticipant={setViewingParticipantId}
+          />
         )}
 
         {activeTab === 'STATISTICS' && (
