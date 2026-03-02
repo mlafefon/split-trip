@@ -1,6 +1,6 @@
 import { Trip, Expense } from '../types';
 import { ICON_MAP } from '../utils/categories';
-import { ArrowRightLeft, Pencil, Trash2, X, Calendar, User, Users, FileText } from 'lucide-react';
+import { ArrowRightLeft, Pencil, Trash2, ArrowRight, Calendar, User, Users, FileText } from 'lucide-react';
 
 type Props = {
   trip: Trip;
@@ -30,9 +30,10 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose }: Pro
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative">
       <button 
         onClick={onClose}
-        className="absolute top-4 left-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
+        className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
+        title="חזור"
       >
-        <X className="w-5 h-5 text-slate-500" />
+        <ArrowRight className="w-5 h-5 text-slate-500" />
       </button>
 
       <div className="flex flex-col items-center mb-6 mt-2">

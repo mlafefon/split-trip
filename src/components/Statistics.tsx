@@ -58,10 +58,10 @@ export const Statistics = ({ trip }: Props) => {
     <div className="space-y-6">
       {totalCategoryExpenses > 0 && (
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 text-center">הוצאות לפי קטגוריה</h3>
-          <div className="h-[300px] w-full" dir="ltr">
+          <h3 className="text-lg font-bold text-slate-800 mb-2 text-center">הוצאות לפי קטגוריה</h3>
+          <div className="h-[220px] w-full" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
+              <PieChart margin={{ top: 0, bottom: 0 }}>
                 <Pie
                   data={categoryData}
                   cx="50%"
@@ -86,7 +86,7 @@ export const Statistics = ({ trip }: Props) => {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-4 space-y-2">
+          <div className="mt-2 space-y-2">
             {categoryData.sort((a, b) => b.value - a.value).map(cat => {
               const Icon = ICON_MAP[cat.icon];
               return (
@@ -109,10 +109,10 @@ export const Statistics = ({ trip }: Props) => {
 
       {totalExpenses > 0 && (
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-          <h3 className="text-lg font-bold text-slate-800 mb-4 text-center">הוצאות לפי משתתף</h3>
-          <div className="h-[300px] w-full" dir="ltr">
+          <h3 className="text-lg font-bold text-slate-800 mb-2 text-center">הוצאות לפי משתתף</h3>
+          <div className="h-[220px] w-full" dir="ltr">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
+              <PieChart margin={{ top: 0, bottom: 0 }}>
                 <Pie
                   data={payerData}
                   cx="50%"
@@ -132,7 +132,7 @@ export const Statistics = ({ trip }: Props) => {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="mt-4 space-y-2">
+          <div className="mt-2 space-y-2">
             {payerData.sort((a, b) => b.value - a.value).map((p, index) => (
               <div key={p.name} className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">

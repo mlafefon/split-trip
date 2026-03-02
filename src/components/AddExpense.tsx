@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trip, Expense, ExpenseSplit, Category } from '../types';
-import { Check, Plus, Settings, Loader2, ChevronDown, Lock } from 'lucide-react';
+import { Check, Plus, Settings, Loader2, ChevronDown, Lock, ArrowRight } from 'lucide-react';
 import { CURRENCIES, fetchExchangeRates } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
 import { CategoryEditor } from './CategoryEditor';
@@ -383,8 +383,16 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
   }
 
   return (
-    <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100">
-      <h2 className="text-2xl font-bold text-slate-800 mb-6">{initialExpense ? 'עריכת הוצאה' : 'הוספת הוצאה'}</h2>
+    <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 relative">
+      <button 
+        type="button"
+        onClick={onCancel}
+        className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
+        title="חזור"
+      >
+        <ArrowRight className="w-5 h-5 text-slate-500" />
+      </button>
+      <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">{initialExpense ? 'עריכת הוצאה' : 'הוספת הוצאה'}</h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
