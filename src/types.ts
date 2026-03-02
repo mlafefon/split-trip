@@ -39,6 +39,7 @@ export type Trip = {
   expenses: Expense[];
   categories: Category[];
   createdAt: string;
+  notes?: string;
 };
 
 export type ExchangeRates = {

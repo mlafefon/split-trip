@@ -17,6 +17,7 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
   const [participants, setParticipants] = useState<Participant[]>(
     initialTrip?.participants || []
   );
+  const [notes, setNotes] = useState(initialTrip?.notes || '');
   const [newParticipantName, setNewParticipantName] = useState('');
   const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
@@ -28,6 +29,7 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
       setBaseCurrency(initialTrip.baseCurrency);
       setTripCurrency(initialTrip.tripCurrency);
       setParticipants(initialTrip.participants);
+      setNotes(initialTrip.notes || '');
     }
   }, [initialTrip]);
 
@@ -87,6 +89,7 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
       expenses: initialTrip?.expenses || [],
       categories: initialTrip?.categories || DEFAULT_CATEGORIES,
       createdAt: initialTrip?.createdAt || new Date().toISOString(),
+      notes: notes.trim()
     };
 
     onSave(tripData);
@@ -212,6 +215,16 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
               </div>
             ))}
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">הערות</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none h-24"
+            placeholder="הערות כלליות לטיול..."
+          />
         </div>
 
         <div className="flex gap-3 pt-4">
