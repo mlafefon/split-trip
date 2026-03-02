@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Trip, Expense, Category } from '../types';
 import { AddExpense } from './AddExpense';
-import { AddTransfer } from './AddTransfer';
 import { TripForm } from './TripForm';
 import { Balances } from './Balances';
 import { Statistics } from './Statistics';
@@ -131,7 +130,15 @@ export const TripView = ({ trip, updateTrip }: Props) => {
   }
 
   if (addMode === 'TRANSFER') {
-    return <AddTransfer trip={trip} onSave={handleAddExpense} onCancel={() => setAddMode('NONE')} />;
+    return (
+      <AddExpense 
+        trip={trip} 
+        onSave={handleAddExpense} 
+        onCancel={() => setAddMode('NONE')} 
+        onUpdateCategories={handleUpdateCategories}
+        defaultMode="TRANSFER"
+      />
+    );
   }
 
   if (editingExpenseId) {

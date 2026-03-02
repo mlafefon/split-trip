@@ -11,10 +11,13 @@ type Props = {
   onSave: (expense: Expense) => void;
   onCancel: () => void;
   onUpdateCategories: (categories: Category[]) => void;
+  defaultMode?: 'EXPENSE' | 'TRANSFER';
 };
 
-export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCategories }: Props) => {
-  const [description, setDescription] = useState(initialExpense?.description || '');
+export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCategories, defaultMode = 'EXPENSE' }: Props) => {
+  const isTransfer = defaultMode === 'TRANSFER' || initialExpense?.tag === 'העברה';
+  
+  const [description, setDescription] = useState(initialExpense?.description || (isTransfer ? 'העברה' : ''));
   
   // Currency State
   const [currency, setCurrency] = useState(initialExpense?.originalCurrency || trip.tripCurrency);
@@ -49,7 +52,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
     return '';
   });
 
-  const [tag, setTag] = useState(initialExpense?.tag || '');
+  const [tag, setTag] = useState(initialExpense?.tag || (isTransfer ? 'העברה' : ''));
   const [notes, setNotes] = useState(initialExpense?.notes || '');
   const [showCategoryEditor, setShowCategoryEditor] = useState(false);
 
@@ -73,10 +76,38 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
   // Split state
   const [splitMode, setSplitMode] = useState<'EXACT' | 'PERCENTAGE'>('EXACT');
   const [selectedBeneficiaries, setSelectedBeneficiaries] = useState<string[]>(
-    initialExpense?.splits.map(s => s.participantId) || trip.participants.map(p => p.id)
+    initialExpense?.splits.map(s => s.participantId) || (isTransfer ? [] : trip.participants.map(p => p.id))
   );
   const [splitValues, setSplitValues] = useState<Record<string, string>>({});
   const [manualSplitIds, setManualSplitIds] = useState<string[]>([]);
+
+  // Update description for transfer
+  useEffect(() => {
+    if (isTransfer) {
+      const payerName = trip.participants.find(p => p.id === singlePayer)?.name;
+      const receiverId = selectedBeneficiaries[0];
+      const receiverName = trip.participants.find(p => p.id === receiverId)?.name;
+      
+      if (payerName && receiverName) {
+        setDescription(`העברה מ${payerName} ל${receiverName}`);
+      } else {
+        setDescription('העברה');
+      }
+    }
+  }, [isTransfer, singlePayer, selectedBeneficiaries, trip.participants]);
+
+  // Ensure payer is not in beneficiaries for transfer
+  useEffect(() => {
+    if (isTransfer && selectedBeneficiaries.includes(singlePayer)) {
+      const newSelected = selectedBeneficiaries.filter(id => id !== singlePayer);
+      setSelectedBeneficiaries(newSelected);
+      
+      // Also clear split value for them
+      const newSplits = { ...splitValues };
+      delete newSplits[singlePayer];
+      setSplitValues(newSplits);
+    }
+  }, [isTransfer, singlePayer, selectedBeneficiaries, splitValues]);
 
   // Initialize splitValues
   useEffect(() => {
@@ -300,6 +331,11 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
       return;
     }
 
+    if (isTransfer && payerMode === 'SINGLE' && selectedBeneficiaries.includes(singlePayer)) {
+      alert('לא ניתן להעביר כסף לעצמך');
+      return;
+    }
+
     // Convert to Trip Currency for storage
     const finalAmountInTripCurrency = numAmount * rate;
 
@@ -392,51 +428,53 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
       >
         <ArrowRight className="w-5 h-5 text-slate-500" />
       </button>
-      <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">{initialExpense ? 'עריכת הוצאה' : 'הוספת הוצאה'}</h2>
+      <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">{initialExpense ? (isTransfer ? 'עריכת העברה' : 'עריכת הוצאה') : (isTransfer ? 'העברה חדשה' : 'הוספת הוצאה')}</h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
         <div className="space-y-4">
-          <div>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {trip.categories.map(cat => {
-                const Icon = ICON_MAP[cat.icon];
-                const isSelected = tag === cat.name;
-                return (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => {
-                      if (!description || description === tag) {
-                        setDescription(cat.name);
-                      }
-                      setTag(cat.name);
-                    }}
-                    className={`flex flex-col items-center gap-1 p-1 rounded-xl transition-all ${isSelected ? 'scale-110' : 'opacity-70 hover:opacity-100'}`}
-                    title={cat.name}
-                  >
-                    <div 
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm transition-transform ${isSelected ? 'ring-2 ring-offset-2 ring-indigo-500' : ''}`}
-                      style={{ backgroundColor: cat.color }}
+          {!isTransfer && (
+            <div>
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                {trip.categories.map(cat => {
+                  const Icon = ICON_MAP[cat.icon];
+                  const isSelected = tag === cat.name;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => {
+                        if (!description || description === tag) {
+                          setDescription(cat.name);
+                        }
+                        setTag(cat.name);
+                      }}
+                      className={`flex flex-col items-center gap-1 p-1 rounded-xl transition-all ${isSelected ? 'scale-110' : 'opacity-70 hover:opacity-100'}`}
+                      title={cat.name}
                     >
-                      {Icon && <Icon className="w-5 h-5" />}
-                    </div>
-                  </button>
-                );
-              })}
-              
-              <button
-                type="button"
-                onClick={() => setShowCategoryEditor(true)}
-                className="flex flex-col items-center gap-1 p-1 rounded-xl hover:bg-slate-50 opacity-70 hover:opacity-100 transition-all"
-                title="ערוך קטגוריות"
-              >
-                <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 shadow-sm">
-                  <Plus className="w-5 h-5" />
-                </div>
-              </button>
+                      <div 
+                        className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm transition-transform ${isSelected ? 'ring-2 ring-offset-2 ring-indigo-500' : ''}`}
+                        style={{ backgroundColor: cat.color }}
+                      >
+                        {Icon && <Icon className="w-5 h-5" />}
+                      </div>
+                    </button>
+                  );
+                })}
+                
+                <button
+                  type="button"
+                  onClick={() => setShowCategoryEditor(true)}
+                  className="flex flex-col items-center gap-1 p-1 rounded-xl hover:bg-slate-50 opacity-70 hover:opacity-100 transition-all"
+                  title="ערוך קטגוריות"
+                >
+                  <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 shadow-sm">
+                    <Plus className="w-5 h-5" />
+                  </div>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">תיאור</label>
@@ -445,7 +483,8 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
               required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              disabled={isTransfer}
+              className={`w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none ${isTransfer ? 'bg-slate-50 text-slate-500' : ''}`}
               placeholder="לדוגמה: ארוחת ערב, מונית..."
             />
           </div>
@@ -559,31 +598,36 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
 
         {/* How to Split Section */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">איך מתחלקים?</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">{isTransfer ? 'למי מעבירים?' : 'איך מתחלקים?'}</label>
           
           {/* Controls */}
-          <div className="flex gap-2 mb-4">
-            <div className="relative flex-1">
-               <select
-                 value={splitMode}
-                 onChange={(e) => handleModeChange(e.target.value as 'EXACT' | 'PERCENTAGE')}
-                 className="w-full p-2 border border-slate-200 rounded-lg bg-white text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
-               >
-                 <option value="EXACT">סכומים מדויקים</option>
-                 <option value="PERCENTAGE">חלוקה לפי אחוזים</option>
-               </select>
+          {!isTransfer && (
+            <div className="flex gap-2 mb-4">
+              <div className="relative flex-1">
+                 <select
+                   value={splitMode}
+                   onChange={(e) => handleModeChange(e.target.value as 'EXACT' | 'PERCENTAGE')}
+                   className="w-full p-2 border border-slate-200 rounded-lg bg-white text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
+                 >
+                   <option value="EXACT">סכומים מדויקים</option>
+                   <option value="PERCENTAGE">חלוקה לפי אחוזים</option>
+                 </select>
+              </div>
+              <button
+                type="button"
+                onClick={handleEqualSplit}
+                className="px-4 py-2 bg-indigo-50 text-indigo-700 text-sm font-medium rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors"
+              >
+                חלוקה שווה
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={handleEqualSplit}
-              className="px-4 py-2 bg-indigo-50 text-indigo-700 text-sm font-medium rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors"
-            >
-              חלוקה שווה
-            </button>
-          </div>
+          )}
 
           <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
             {trip.participants.map(p => {
+              // In transfer mode, hide the payer from the list
+              if (isTransfer && p.id === singlePayer) return null;
+
               const isSelected = selectedBeneficiaries.includes(p.id);
               const currentVal = parseFloat(splitValues[p.id] || '0');
               
@@ -620,7 +664,17 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
                   <div className="flex items-center justify-between gap-4">
                     <div 
                       className="flex items-center gap-3 cursor-pointer select-none flex-1"
-                      onClick={() => toggleBeneficiary(p.id)}
+                      onClick={() => {
+                        if (isTransfer) {
+                          // Exclusive selection for transfer
+                          setSelectedBeneficiaries([p.id]);
+                          // Set 100% value
+                          const total = parseFloat(amount || '0');
+                          setSplitValues({ [p.id]: splitMode === 'EXACT' ? total.toString() : '100' });
+                        } else {
+                          toggleBeneficiary(p.id);
+                        }
+                      }}
                     >
                       <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300'}`}>
                         {isSelected && <Check className="w-3 h-3" />}
@@ -633,44 +687,48 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
                       </div>
                     </div>
                     
-                    <div className="relative w-40">
-                      <input
-                        type="number"
-                        min="0"
-                        step={splitMode === 'EXACT' ? "0.01" : "0.1"}
-                        value={splitValues[p.id] || ''}
-                        onChange={(e) => {
-                          if (!isSelected) toggleBeneficiary(p.id);
-                          handleSplitChange(p.id, e.target.value);
-                        }}
-                        className={`w-full p-2 pl-12 pr-8 border rounded-lg text-left outline-none transition-colors ${
-                          isOverLimit 
-                            ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
-                            : isManual
-                              ? 'border-amber-200 bg-amber-50 focus:border-amber-400 focus:ring-1 focus:ring-amber-400'
-                              : 'border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
-                        }`}
-                        dir="ltr"
-                        placeholder="0.00"
-                        disabled={!isSelected}
-                      />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-                        {splitMode === 'EXACT' ? currency : '%'}
-                      </span>
-                      {isManual && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-400 pointer-events-none" title="סכום קבוע ידנית">
-                          <Lock className="w-3 h-3" />
+                    {!isTransfer && (
+                      <div className="relative w-40">
+                        <input
+                          type="number"
+                          min="0"
+                          step={splitMode === 'EXACT' ? "0.01" : "0.1"}
+                          value={splitValues[p.id] || ''}
+                          onChange={(e) => {
+                            if (!isSelected) toggleBeneficiary(p.id);
+                            handleSplitChange(p.id, e.target.value);
+                          }}
+                          className={`w-full p-2 pl-12 pr-8 border rounded-lg text-left outline-none transition-colors ${
+                            isOverLimit 
+                              ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
+                              : isManual
+                                ? 'border-amber-200 bg-amber-50 focus:border-amber-400 focus:ring-1 focus:ring-amber-400'
+                                : 'border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                          }`}
+                          dir="ltr"
+                          placeholder="0.00"
+                          disabled={!isSelected}
+                        />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
+                          {splitMode === 'EXACT' ? currency : '%'}
                         </span>
-                      )}
-                    </div>
+                        {isManual && (
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-400 pointer-events-none" title="סכום קבוע ידנית">
+                            <Lock className="w-3 h-3" />
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               );
             })}
             
-            <div className="text-xs text-slate-500 text-left mt-2 pt-2 border-t border-slate-200" dir="ltr">
-              סה"כ: {Object.values(splitValues).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0).toFixed(2)} / {splitMode === 'EXACT' ? (amount || '0.00') : '100%'}
-            </div>
+            {!isTransfer && (
+              <div className="text-xs text-slate-500 text-left mt-2 pt-2 border-t border-slate-200" dir="ltr">
+                סה"כ: {Object.values(splitValues).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0).toFixed(2)} / {splitMode === 'EXACT' ? (amount || '0.00') : '100%'}
+              </div>
+            )}
           </div>
         </div>
 
