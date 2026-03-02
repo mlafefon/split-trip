@@ -501,16 +501,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">תאריך</label>
-            <input 
-              type="date" 
-              required
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-            />
-          </div>
+
         </div>
 
         <hr className="border-slate-100" />
@@ -691,6 +682,18 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
             onChange={(e) => setNotes(e.target.value)}
             className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none h-24"
             placeholder="הוסף הערות להוצאה זו..."
+          />
+        </div>
+
+        {/* Date */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">תאריך</label>
+          <input 
+            type="date" 
+            required
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
           />
         </div>
 
