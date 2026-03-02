@@ -13,11 +13,12 @@ import { ICON_MAP } from '../utils/categories';
 type Props = {
   trip: Trip;
   updateTrip: (trip: Trip) => void;
+  setBackHandler: (handler: (() => boolean) | null) => void;
 };
 
 type Tab = 'EXPENSES' | 'BALANCES' | 'STATISTICS';
 
-export const TripView = ({ trip, updateTrip }: Props) => {
+export const TripView = ({ trip, updateTrip, setBackHandler }: Props) => {
   const [activeTab, setActiveTab] = useState<Tab>('EXPENSES');
   const [addMode, setAddMode] = useState<'NONE' | 'EXPENSE' | 'TRANSFER'>('NONE');
   const [showMenu, setShowMenu] = useState(false);
@@ -28,6 +29,30 @@ export const TripView = ({ trip, updateTrip }: Props) => {
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [isFetchingRate, setIsFetchingRate] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    setBackHandler(() => {
+      if (addMode !== 'NONE') {
+        setAddMode('NONE');
+        return true;
+      }
+      if (editingExpenseId) {
+        setEditingExpenseId(null);
+        return true;
+      }
+      if (viewingExpenseId) {
+        setViewingExpenseId(null);
+        return true;
+      }
+      if (isEditing) {
+        setIsEditing(false);
+        return true;
+      }
+      return false;
+    });
+
+    return () => setBackHandler(null);
+  }, [addMode, editingExpenseId, viewingExpenseId, isEditing, setBackHandler]);
 
   useEffect(() => {
     const getRates = async () => {

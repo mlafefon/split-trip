@@ -420,14 +420,6 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
 
   return (
     <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 relative">
-      <button 
-        type="button"
-        onClick={onCancel}
-        className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
-        title="חזור"
-      >
-        <ArrowRight className="w-5 h-5 text-slate-500" />
-      </button>
       <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">{initialExpense ? (isTransfer ? 'עריכת העברה' : 'עריכת הוצאה') : (isTransfer ? 'העברה חדשה' : 'הוספת הוצאה')}</h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -676,8 +668,8 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
                         }
                       }}
                     >
-                      <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300'}`}>
-                        {isSelected && <Check className="w-3 h-3" />}
+                      <div className={`w-5 h-5 ${isTransfer ? 'rounded-full' : 'rounded'} border flex items-center justify-center transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300'}`}>
+                        {isSelected && (isTransfer ? <div className="w-2 h-2 rounded-full bg-white" /> : <Check className="w-3 h-3" />)}
                       </div>
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-slate-700">

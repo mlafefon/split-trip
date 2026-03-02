@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { TripList } from './components/TripList';
 import { TripView } from './components/TripView';
 import { TripForm } from './components/TripForm';
@@ -9,8 +9,21 @@ export default function App() {
   const { trips, addTrip, updateTrip, deleteTrip } = useTrips();
   const [currentTripId, setCurrentTripId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [backHandler, setBackHandler] = useState<(() => boolean) | null>(null);
 
   const currentTrip = trips.find(t => t.id === currentTripId);
+
+  const handleBack = () => {
+    if (backHandler && backHandler()) {
+      return;
+    }
+    setCurrentTripId(null);
+    setIsCreating(false);
+  };
+
+  const handleSetBackHandler = useCallback((handler: (() => boolean) | null) => {
+    setBackHandler(() => handler);
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-24" dir="rtl">
@@ -21,10 +34,7 @@ export default function App() {
           </h1>
           {(currentTrip || isCreating) && (
             <button 
-              onClick={() => {
-                setCurrentTripId(null);
-                setIsCreating(false);
-              }}
+              onClick={handleBack}
               className="absolute right-0 p-1 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
               title="חזור"
             >
@@ -45,7 +55,11 @@ export default function App() {
             onCancel={() => setIsCreating(false)} 
           />
         ) : currentTrip ? (
-          <TripView trip={currentTrip} updateTrip={updateTrip} />
+          <TripView 
+            trip={currentTrip} 
+            updateTrip={updateTrip} 
+            setBackHandler={handleSetBackHandler}
+          />
         ) : (
           <TripList 
             trips={trips} 

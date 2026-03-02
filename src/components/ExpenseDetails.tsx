@@ -28,14 +28,6 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose }: Pro
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative">
-      <button 
-        onClick={onClose}
-        className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition-colors"
-        title="חזור"
-      >
-        <ArrowRight className="w-5 h-5 text-slate-500" />
-      </button>
-
       <div className="flex flex-col items-center mb-6 mt-2">
         <div 
           className="w-16 h-16 rounded-full flex items-center justify-center text-white shadow-md mb-4"
