@@ -82,7 +82,10 @@ export const TripList = ({ trips, onSelect, onCreateNew, onDelete }: Props) => {
                   סה"כ הוצאות:
                 </span>
                 <span className="font-bold text-indigo-600">
-                  {trip.expenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)} {trip.tripCurrency}
+                  {trip.expenses
+                    .filter(exp => exp.tag !== 'העברה')
+                    .reduce((sum, exp) => sum + exp.amount, 0)
+                    .toFixed(2)} {trip.tripCurrency}
                 </span>
               </div>
             </div>

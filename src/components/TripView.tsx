@@ -118,7 +118,9 @@ export const TripView = ({ trip, updateTrip, setBackHandler }: Props) => {
     }
   };
 
-  const totalSpent = trip.expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalSpent = trip.expenses
+    .filter(e => e.tag !== 'העברה')
+    .reduce((sum, e) => sum + e.amount, 0);
 
   const filteredExpenses = trip.expenses.filter(expense => {
     if (!searchQuery.trim()) return true;

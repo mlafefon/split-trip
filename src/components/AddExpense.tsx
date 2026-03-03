@@ -561,26 +561,53 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
 
           {payerMode === 'MULTIPLE' && (
             <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
-              {trip.participants.map(p => (
-                <div key={p.id} className="flex items-center justify-between gap-4">
-                  <span className="text-sm font-medium text-slate-700">{p.name}</span>
-                  <div className="relative w-40">
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={multiPayers[p.id] || ''}
-                      onChange={(e) => setMultiPayers({...multiPayers, [p.id]: e.target.value})}
-                      className="w-full p-2 pl-12 border border-slate-200 rounded-lg text-left"
-                      dir="ltr"
-                      placeholder="0.00"
-                    />
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{currency}</span>
+              {trip.participants.map(p => {
+                const currentVal = parseFloat(multiPayers[p.id] || '0');
+                const otherSum = Object.entries(multiPayers)
+                  .filter(([id]) => id !== p.id)
+                  .reduce((sum, [, val]) => sum + (parseFloat(val as string) || 0), 0);
+                
+                const totalTarget = parseFloat(amount || '0');
+                const maxAllowed = Math.max(0, totalTarget - otherSum);
+                const isOverLimit = currentVal > maxAllowed + 0.01;
+
+                return (
+                  <div key={p.id} className="flex items-center justify-between gap-4">
+                    <span className="text-sm font-medium text-slate-700">{p.name}</span>
+                    <div className="relative w-40">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={multiPayers[p.id] || ''}
+                        onChange={(e) => setMultiPayers({...multiPayers, [p.id]: e.target.value})}
+                        className={`w-full p-2 pl-12 pr-4 border rounded-lg text-left outline-none transition-colors ${
+                          isOverLimit 
+                            ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
+                            : 'border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                        }`}
+                        dir="ltr"
+                        placeholder="0.00"
+                      />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{currency}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
-              <div className="text-xs text-slate-500 text-left mt-2" dir="ltr">
-                סה"כ שולם: {Object.values(multiPayers).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0).toFixed(2)} / {amount || '0.00'}
+                );
+              })}
+              
+              <div className="text-xs text-slate-500 text-left mt-2 pt-2 border-t border-slate-200" dir="ltr">
+                {(() => {
+                  const sum = Object.values(multiPayers).reduce<number>((s, val) => s + (parseFloat(val as string) || 0), 0);
+                  const total = parseFloat(amount || '0');
+                  const diff = Math.abs(sum - total);
+                  const isMatch = diff < 0.01;
+                  
+                  return (
+                    <span className={isMatch ? 'text-emerald-600 font-medium' : 'text-red-500 font-medium'}>
+                      סה"כ שולם: {sum.toFixed(2)} / {total.toFixed(2)}
+                    </span>
+                  );
+                })()}
               </div>
             </div>
           )}
