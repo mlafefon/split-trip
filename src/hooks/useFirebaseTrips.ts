@@ -137,10 +137,18 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
   const updateTrip = async (updatedTrip: Trip) => {
     if (isReadOnly) return;
     try {
+      // Optimistically update local state
+      setTrips(prev => prev.map(t => t.id === updatedTrip.id ? updatedTrip : t));
+      if (currentTrip?.id === updatedTrip.id) {
+        setCurrentTrip(updatedTrip);
+      }
+
       const tripRef = doc(db, 'trips', updatedTrip.id);
       await updateDoc(tripRef, { ...updatedTrip });
     } catch (err) {
       console.error('Error updating trip:', err);
+      // Revert on error (optional, but good practice)
+      // For now we just log the error
       throw err;
     }
   };

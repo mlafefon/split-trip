@@ -42,6 +42,25 @@ export default function App() {
   // If we have a URL trip ID, that's our current trip
   const activeTrip = urlTripId ? firebaseTrip : trips.find(t => t.id === currentTripId);
 
+  // Calculate canEdit for the active trip (whether from URL or local list)
+  const activeTripCanEdit = (() => {
+    if (!activeTrip) return false;
+    if (isReadOnly) return false;
+    
+    // If it came from URL, use the hook's result
+    if (urlTripId) return canEdit;
+    
+    // Otherwise check local storage tokens
+    const localTokens = JSON.parse(localStorage.getItem('tripTokens') || '{}');
+    const localToken = localTokens[activeTrip.id];
+    
+    // Allow edit if:
+    // 1. Token matches
+    // OR
+    // 2. No token exists on trip yet (backward compatibility)
+    return (activeTrip.editCode && localToken === activeTrip.editCode) || !activeTrip.editCode;
+  })();
+
   const handleBack = () => {
     if (backHandler && backHandler()) {
       return;
@@ -134,7 +153,7 @@ export default function App() {
               trip={activeTrip} 
               updateTrip={updateTrip} 
               setBackHandler={handleSetBackHandler}
-              isReadOnly={!canEdit}
+              isReadOnly={!activeTripCanEdit}
             />
             <ShareDialog 
               isOpen={showShareDialog}
@@ -142,7 +161,7 @@ export default function App() {
               tripId={activeTrip.id}
               tripName={activeTrip.destination}
               editCode={activeTrip.editCode}
-              canEdit={canEdit}
+              canEdit={activeTripCanEdit}
             />
           </>
         ) : (

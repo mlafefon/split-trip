@@ -186,11 +186,22 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
                       <button type="button" onClick={() => startEditingParticipant(p)} className="text-indigo-400 hover:text-indigo-600">
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
-                      {participants.length > 1 && (
-                        <button type="button" onClick={() => handleRemoveParticipant(p.id)} className="text-indigo-400 hover:text-red-500">
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
+                      {participants.length > 1 && (() => {
+                        // Check if participant has expenses
+                        const hasExpenses = initialTrip?.expenses.some(e => 
+                          (e.payers?.some(payer => payer.participantId === p.id)) || 
+                          ((e as any).paidBy === p.id) || 
+                          e.splits.some(s => s.participantId === p.id)
+                        );
+
+                        if (hasExpenses) return null;
+
+                        return (
+                          <button type="button" onClick={() => handleRemoveParticipant(p.id)} className="text-indigo-400 hover:text-red-500">
+                            <X className="w-4 h-4" />
+                          </button>
+                        );
+                      })()}
                     </div>
                   </>
                 )}
