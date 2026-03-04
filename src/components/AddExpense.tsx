@@ -4,6 +4,7 @@ import { Check, Plus, Settings, Loader2, ChevronDown, Lock, ArrowRight } from 'l
 import { CURRENCIES, fetchExchangeRates } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
 import { CategoryEditor } from './CategoryEditor';
+import { CurrencySelect } from './CurrencySelect';
 
 type Props = {
   trip: Trip;
@@ -501,19 +502,12 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
                 dir="ltr"
                 placeholder="0.00"
               />
-              <div className="relative w-28">
-                <div className="absolute inset-0 w-full h-full pointer-events-none flex items-center justify-between px-3 border border-slate-200 rounded-xl bg-white">
-                  <span className="font-medium text-sm text-slate-700">{currency}</span>
-                  <ChevronDown className="w-4 h-4 text-slate-400" />
-                </div>
-                <select
-                  value={currency}
-                  onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full h-full opacity-0 cursor-pointer"
-                >
-                  {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} - {c.name}</option>)}
-                </select>
-              </div>
+              <CurrencySelect 
+                value={currency}
+                onChange={setCurrency}
+                className="w-32"
+                short
+              />
             </div>
             {currency !== trip.tripCurrency && (
               <div className="text-xs text-slate-500 mt-1 px-1 flex items-center gap-1" dir="ltr">

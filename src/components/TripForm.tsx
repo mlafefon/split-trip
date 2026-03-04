@@ -3,6 +3,7 @@ import { Trip, Participant } from '../types';
 import { CURRENCIES } from '../utils/currency';
 import { DEFAULT_CATEGORIES } from '../utils/categories';
 import { X, Plus, ChevronDown, Pencil, Check } from 'lucide-react';
+import { CurrencySelect } from './CurrencySelect';
 
 type Props = {
   initialTrip?: Trip;
@@ -115,38 +116,16 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">מטבע הבית</label>
-            <div className="relative">
-              <div className="absolute inset-0 w-full h-full pointer-events-none flex items-center justify-between px-3 border border-slate-200 rounded-xl bg-white">
-                <span className="font-medium text-sm text-slate-700">{baseCurrency}</span>
-                <ChevronDown className="w-4 h-4 text-slate-400" />
-              </div>
-              <select 
-                value={baseCurrency}
-                onChange={(e) => setBaseCurrency(e.target.value)}
-                className="w-full p-3 opacity-0 cursor-pointer"
-              >
-                {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} - {c.name}</option>)}
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">מטבע הטיול</label>
-            <div className="relative">
-              <div className="absolute inset-0 w-full h-full pointer-events-none flex items-center justify-between px-3 border border-slate-200 rounded-xl bg-white">
-                <span className="font-medium text-sm text-slate-700">{tripCurrency}</span>
-                <ChevronDown className="w-4 h-4 text-slate-400" />
-              </div>
-              <select 
-                value={tripCurrency}
-                onChange={(e) => setTripCurrency(e.target.value)}
-                className="w-full p-3 opacity-0 cursor-pointer"
-              >
-                {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.code} - {c.name}</option>)}
-              </select>
-            </div>
-          </div>
+          <CurrencySelect 
+            label="מטבע הבית"
+            value={baseCurrency}
+            onChange={setBaseCurrency}
+          />
+          <CurrencySelect 
+            label="מטבע הטיול"
+            value={tripCurrency}
+            onChange={setTripCurrency}
+          />
         </div>
 
         <div>
