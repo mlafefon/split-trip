@@ -15,11 +15,12 @@ type Props = {
   trip: Trip;
   updateTrip: (trip: Trip) => void;
   setBackHandler: (handler: (() => boolean) | null) => void;
+  isReadOnly?: boolean;
 };
 
 type Tab = 'EXPENSES' | 'BALANCES' | 'STATISTICS';
 
-export const TripView = ({ trip, updateTrip, setBackHandler }: Props) => {
+export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false }: Props) => {
   const [activeTab, setActiveTab] = useState<Tab>('EXPENSES');
   const [addMode, setAddMode] = useState<'NONE' | 'EXPENSE' | 'TRANSFER'>('NONE');
   const [showMenu, setShowMenu] = useState(false);
@@ -205,6 +206,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler }: Props) => {
             setDeleteExpenseId(expenseToView.id);
           }}
           onClose={() => setViewingExpenseId(null)}
+          isReadOnly={isReadOnly}
         />
       );
     }
@@ -233,13 +235,15 @@ export const TripView = ({ trip, updateTrip, setBackHandler }: Props) => {
 
       {/* Summary Card */}
       <div className="bg-gradient-to-br from-indigo-600 to-violet-600 rounded-3xl p-6 text-white shadow-lg relative">
-        <button 
-          onClick={() => setIsEditing(true)}
-          className="absolute top-4 left-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
-          title="ערוך פרטי טיול"
-        >
-          <Pencil className="w-4 h-4 text-white" />
-        </button>
+        {!isReadOnly && (
+          <button 
+            onClick={() => setIsEditing(true)}
+            className="absolute top-4 left-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+            title="ערוך פרטי טיול"
+          >
+            <Pencil className="w-4 h-4 text-white" />
+          </button>
+        )}
         
         <div className="text-indigo-100 text-sm mb-1">סה"כ הוצאות בטיול</div>
         <div className="text-4xl font-bold mb-2" dir="ltr">
@@ -382,56 +386,58 @@ export const TripView = ({ trip, updateTrip, setBackHandler }: Props) => {
               </div>
             )}
             
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3">
-              {showMenu && (
-                <>
-                  <div 
-                    className="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-0 transition-opacity" 
-                    onClick={() => setShowMenu(false)}
-                  />
-                  <div className="flex flex-col gap-3 mb-4 animate-in slide-in-from-bottom-8 fade-in duration-300 z-10 min-w-[240px]">
-                    <button 
-                      onClick={() => {
-                        setAddMode('TRANSFER');
-                        setShowMenu(false);
-                      }}
-                      className="group bg-white text-slate-700 p-3 pr-4 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-4 transition-all hover:scale-105 active:scale-95"
-                    >
-                      <div className="bg-orange-50 p-3 rounded-xl group-hover:bg-orange-100 transition-colors">
-                        <ArrowRightLeft className="w-6 h-6 text-orange-500" />
-                      </div>
-                      <div className="text-right">
-                        <div className="font-bold text-slate-800">העברה</div>
-                        <div className="text-xs text-slate-500">תשלום בין חברים</div>
-                      </div>
-                    </button>
-
-                    <button 
-                      onClick={() => {
-                        setAddMode('EXPENSE');
-                        setShowMenu(false);
-                      }}
-                      className="group bg-white text-slate-700 p-3 pr-4 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-4 transition-all hover:scale-105 active:scale-95"
-                    >
-                      <div className="bg-indigo-50 p-3 rounded-xl group-hover:bg-indigo-100 transition-colors">
-                        <Receipt className="w-6 h-6 text-indigo-500" />
-                      </div>
-                      <div className="text-right">
-                        <div className="font-bold text-slate-800">הוצאה חדשה</div>
-                        <div className="text-xs text-slate-500">קניות, מסעדות, אטרקציות...</div>
-                      </div>
-                    </button>
-                  </div>
-                </>
-              )}
-              
-              <button 
-                onClick={() => setShowMenu(!showMenu)}
-                className={`bg-indigo-600 text-white p-4 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 ${showMenu ? 'rotate-45 bg-slate-800' : ''}`}
-              >
-                <Plus className="w-6 h-6" />
-              </button>
-            </div>
+            {!isReadOnly && (
+              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3">
+                {showMenu && (
+                  <>
+                    <div 
+                      className="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-0 transition-opacity" 
+                      onClick={() => setShowMenu(false)}
+                    />
+                    <div className="flex flex-col gap-3 mb-4 animate-in slide-in-from-bottom-8 fade-in duration-300 z-10 min-w-[240px]">
+                      <button 
+                        onClick={() => {
+                          setAddMode('TRANSFER');
+                          setShowMenu(false);
+                        }}
+                        className="group bg-white text-slate-700 p-3 pr-4 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-4 transition-all hover:scale-105 active:scale-95"
+                      >
+                        <div className="bg-orange-50 p-3 rounded-xl group-hover:bg-orange-100 transition-colors">
+                          <ArrowRightLeft className="w-6 h-6 text-orange-500" />
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-slate-800">העברה</div>
+                          <div className="text-xs text-slate-500">תשלום בין חברים</div>
+                        </div>
+                      </button>
+  
+                      <button 
+                        onClick={() => {
+                          setAddMode('EXPENSE');
+                          setShowMenu(false);
+                        }}
+                        className="group bg-white text-slate-700 p-3 pr-4 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-4 transition-all hover:scale-105 active:scale-95"
+                      >
+                        <div className="bg-indigo-50 p-3 rounded-xl group-hover:bg-indigo-100 transition-colors">
+                          <Receipt className="w-6 h-6 text-indigo-500" />
+                        </div>
+                        <div className="text-right">
+                          <div className="font-bold text-slate-800">הוצאה חדשה</div>
+                          <div className="text-xs text-slate-500">קניות, מסעדות, אטרקציות...</div>
+                        </div>
+                      </button>
+                    </div>
+                  </>
+                )}
+                
+                <button 
+                  onClick={() => setShowMenu(!showMenu)}
+                  className={`bg-indigo-600 text-white p-4 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 ${showMenu ? 'rotate-45 bg-slate-800' : ''}`}
+                >
+                  <Plus className="w-6 h-6" />
+                </button>
+              </div>
+            )}
           </div>
         )}
 

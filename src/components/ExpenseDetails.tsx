@@ -8,9 +8,10 @@ type Props = {
   onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
+  isReadOnly?: boolean;
 };
 
-export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose }: Props) => {
+export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isReadOnly = false }: Props) => {
   const category = trip.categories.find(c => c.name === expense.tag);
   let Icon = category ? ICON_MAP[category.icon] : null;
   let iconColor = category?.color;
@@ -97,22 +98,24 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose }: Pro
         )}
       </div>
 
-      <div className="flex gap-3 mt-8 pt-4 border-t border-slate-100">
-        <button 
-          onClick={onEdit}
-          className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 text-white p-3 rounded-xl font-medium hover:bg-indigo-700 transition-colors"
-        >
-          <Pencil className="w-4 h-4" />
-          ערוך
-        </button>
-        <button 
-          onClick={onDelete}
-          className="flex-1 flex items-center justify-center gap-2 bg-white border border-red-200 text-red-600 p-3 rounded-xl font-medium hover:bg-red-50 transition-colors"
-        >
-          <Trash2 className="w-4 h-4" />
-          מחק
-        </button>
-      </div>
+      {!isReadOnly && (
+        <div className="flex gap-3 mt-8 pt-4 border-t border-slate-100">
+          <button 
+            onClick={onEdit}
+            className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 text-white p-3 rounded-xl font-medium hover:bg-indigo-700 transition-colors"
+          >
+            <Pencil className="w-4 h-4" />
+            ערוך
+          </button>
+          <button 
+            onClick={onDelete}
+            className="flex-1 flex items-center justify-center gap-2 bg-white border border-red-200 text-red-600 p-3 rounded-xl font-medium hover:bg-red-50 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+            מחק
+          </button>
+        </div>
+      )}
     </div>
   );
 };

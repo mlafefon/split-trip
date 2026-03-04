@@ -40,6 +40,7 @@ export type Trip = {
   categories: Category[];
   createdAt: string;
   notes?: string;
+  editCode?: string; // Secret code for editing permissions
 };
 
 export type ExchangeRates = {

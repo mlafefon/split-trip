@@ -55,15 +55,26 @@ export const TripList = ({ trips, onSelect, onCreateNew, onDelete }: Props) => {
             >
               <div className="flex justify-between items-start">
                 <h3 className="text-lg font-bold text-slate-800">{trip.destination}</h3>
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setDeleteId(trip.id);
-                  }}
-                  className="text-slate-400 hover:text-red-500 p-1"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+                {(() => {
+                  const localTokens = JSON.parse(localStorage.getItem('tripTokens') || '{}');
+                  const canEdit = (trip.editCode && localTokens[trip.id] === trip.editCode) || !trip.editCode;
+                  
+                  if (canEdit) {
+                    return (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeleteId(trip.id);
+                        }}
+                        className="text-slate-400 hover:text-red-500 p-1"
+                        title="מחק טיול"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
               
               <div className="flex items-center gap-4 text-sm text-slate-500">
