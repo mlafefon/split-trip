@@ -120,11 +120,13 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
             label="מטבע הבית"
             value={baseCurrency}
             onChange={setBaseCurrency}
+            short
           />
           <CurrencySelect 
             label="מטבע הטיול"
             value={tripCurrency}
             onChange={setTripCurrency}
+            short
           />
         </div>
 

@@ -49,15 +49,15 @@ export const CurrencySelect = ({ value, onChange, label, className = '', short =
       </button>
 
       {isOpen && (
-        <div className={`absolute z-50 mt-2 ${short ? 'left-0 w-64' : 'w-full'} bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200`}>
-          <div className="p-2 border-b border-slate-100 sticky top-0 bg-white">
+        <div className={`absolute z-50 mt-2 ${short ? 'left-0 w-64 max-w-[90vw]' : 'w-full'} bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-60`}>
+          <div className="p-2 border-b border-slate-100 sticky top-0 bg-white z-10">
             <div className="relative">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 autoFocus
                 className="w-full pr-9 pl-8 py-2 text-sm border border-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                placeholder="חיפוש מטבע או מדינה..."
+                placeholder="חיפוש..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -73,7 +73,7 @@ export const CurrencySelect = ({ value, onChange, label, className = '', short =
             </div>
           </div>
           
-          <div className="max-h-60 overflow-y-auto">
+          <div className="overflow-y-auto flex-1">
             {filteredCurrencies.length === 0 ? (
               <div className="p-4 text-center text-sm text-slate-400">לא נמצאו תוצאות</div>
             ) : (
@@ -86,10 +86,10 @@ export const CurrencySelect = ({ value, onChange, label, className = '', short =
                     setIsOpen(false);
                     setSearchQuery('');
                   }}
-                  className={`w-full text-right px-4 py-2.5 text-sm hover:bg-slate-50 transition-colors flex items-center justify-between ${value === c.code ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700'}`}
+                  className={`w-full text-right px-4 py-3 text-sm hover:bg-slate-50 transition-colors flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 ${value === c.code ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700'}`}
                 >
-                  <span>{c.name}</span>
-                  <span className="font-mono opacity-60">{c.code}</span>
+                  <span className="truncate">{c.name}</span>
+                  <span className="font-mono opacity-60 text-xs bg-slate-100 px-1.5 py-0.5 rounded flex-shrink-0">{c.code}</span>
                 </button>
               ))
             )}
