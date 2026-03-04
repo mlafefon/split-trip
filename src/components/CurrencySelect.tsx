@@ -8,9 +8,10 @@ type Props = {
   label?: string;
   className?: string;
   short?: boolean;
+  align?: 'left' | 'right';
 };
 
-export const CurrencySelect = ({ value, onChange, label, className = '', short = false }: Props) => {
+export const CurrencySelect = ({ value, onChange, label, className = '', short = false, align = 'left' }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -33,6 +34,8 @@ export const CurrencySelect = ({ value, onChange, label, className = '', short =
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const alignmentClass = align === 'right' ? 'right-0' : 'left-0';
+
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
       {label && <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>}
@@ -49,7 +52,7 @@ export const CurrencySelect = ({ value, onChange, label, className = '', short =
       </button>
 
       {isOpen && (
-        <div className={`absolute z-50 mt-2 ${short ? 'left-0 w-64 max-w-[90vw]' : 'w-full'} bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-60`}>
+        <div className={`absolute z-50 mt-2 ${short ? `${alignmentClass} w-64 max-w-[90vw]` : 'w-full'} bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 flex flex-col max-h-60`}>
           <div className="p-2 border-b border-slate-100 sticky top-0 bg-white z-10">
             <div className="relative">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -73,7 +76,7 @@ export const CurrencySelect = ({ value, onChange, label, className = '', short =
             </div>
           </div>
           
-          <div className="overflow-y-auto flex-1">
+          <div className="overflow-y-auto flex-1 overscroll-contain">
             {filteredCurrencies.length === 0 ? (
               <div className="p-4 text-center text-sm text-slate-400">לא נמצאו תוצאות</div>
             ) : (

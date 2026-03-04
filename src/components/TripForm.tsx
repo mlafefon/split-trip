@@ -121,6 +121,7 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
             value={baseCurrency}
             onChange={setBaseCurrency}
             short
+            align="right"
           />
           <CurrencySelect 
             label="מטבע הטיול"
