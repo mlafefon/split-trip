@@ -47,14 +47,10 @@ export default function App() {
       return;
     }
     
-    if (urlTripId) {
-      // Clear URL params and return to home
-      window.history.pushState({}, '', window.location.pathname);
-      setUrlTripId(null);
-      setCurrentTripId(null);
-    } else {
-      setCurrentTripId(null);
-    }
+    // Always clear URL params when going back to list
+    window.history.pushState({}, '', window.location.pathname);
+    setUrlTripId(null);
+    setCurrentTripId(null);
     setIsCreating(false);
   };
 
@@ -92,7 +88,19 @@ export default function App() {
                 <ChevronRight className="w-6 h-6" />
               </button>
             )}
-            <h1 className="text-xl font-bold truncate max-w-[200px]">
+            <h1 
+              className={`text-xl font-bold truncate max-w-[200px] ${activeTrip || isCreating ? 'cursor-pointer hover:opacity-80' : ''}`}
+              onClick={() => {
+                if (activeTrip || isCreating) {
+                  // Force full reset to home
+                  if (backHandler) setBackHandler(null);
+                  window.history.pushState({}, '', window.location.pathname);
+                  setUrlTripId(null);
+                  setCurrentTripId(null);
+                  setIsCreating(false);
+                }
+              }}
+            >
               {activeTrip ? activeTrip.destination : isCreating ? 'טיול חדש' : 'ניהול תקציב טיולים'}
             </h1>
           </div>
