@@ -5,6 +5,7 @@ import { CURRENCIES, fetchExchangeRates } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
 import { CategoryEditor } from './CategoryEditor';
 import { CurrencySelect } from './CurrencySelect';
+import { Select } from './Select';
 
 type Props = {
   trip: Trip;
@@ -535,10 +536,9 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">{isTransfer ? 'מי מעביר?' : 'מי שילם?'}</label>
           
-          <select 
+          <Select
             value={payerMode === 'MULTIPLE' ? 'MULTIPLE' : singlePayer}
-            onChange={(e) => {
-              const val = e.target.value;
+            onChange={(val) => {
               if (val === 'MULTIPLE') {
                 setPayerMode('MULTIPLE');
               } else {
@@ -546,12 +546,13 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
                 setSinglePayer(val);
               }
             }}
-            className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none mb-3"
-          >
-            <option value="" hidden>בחר משתתף...</option>
-            {trip.participants.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            <option value="MULTIPLE">מספר משתתפים</option>
-          </select>
+            options={[
+              ...trip.participants.map(p => ({ value: p.id, label: p.name })),
+              { value: 'MULTIPLE', label: 'מספר משתתפים' }
+            ]}
+            placeholder="בחר משתתף..."
+            className="mb-3"
+          />
 
           {payerMode === 'MULTIPLE' && (
             <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
@@ -617,14 +618,14 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
           {!isTransfer && (
             <div className="flex gap-2 mb-4">
               <div className="relative flex-1">
-                 <select
+                 <Select
                    value={splitMode}
-                   onChange={(e) => handleModeChange(e.target.value as 'EXACT' | 'PERCENTAGE')}
-                   className="w-full p-2 border border-slate-200 rounded-lg bg-white text-sm font-medium text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500"
-                 >
-                   <option value="EXACT">סכומים מדויקים</option>
-                   <option value="PERCENTAGE">חלוקה לפי אחוזים</option>
-                 </select>
+                   onChange={(val) => handleModeChange(val as 'EXACT' | 'PERCENTAGE')}
+                   options={[
+                     { value: 'EXACT', label: 'סכומים מדויקים' },
+                     { value: 'PERCENTAGE', label: 'חלוקה לפי אחוזים' }
+                   ]}
+                 />
               </div>
               <button
                 type="button"
