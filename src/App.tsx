@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { TripList } from './components/TripList';
 import { TripView } from './components/TripView';
 import { TripForm } from './components/TripForm';
@@ -61,16 +61,77 @@ export default function App() {
     return (activeTrip.editCode && localToken === activeTrip.editCode) || !activeTrip.editCode;
   })();
 
-  const handleBack = () => {
-    if (backHandler && backHandler()) {
-      return;
+  // Ref to track if we pushed a modal state
+  const modalHistoryPushed = useRef(false);
+
+  // Handle Back Handler (Modals) with History
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      // If we have a back handler, it means we have an open modal/view
+      if (backHandler) {
+        // Attempt to handle the back action internally
+        const handled = backHandler();
+        if (handled) {
+          // If handled, we successfully closed the modal.
+          // Since this was triggered by popstate, the browser history is already updated.
+          // We mark that we consumed the history entry.
+          modalHistoryPushed.current = false;
+          return;
+        }
+      }
+
+      // If not handled by backHandler (or no backHandler), handle navigation
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('trip');
+      
+      if (!id) {
+        // Back to list
+        setUrlTripId(null);
+        setCurrentTripId(null);
+        setIsCreating(false);
+        // Clear any back handler
+        if (backHandler) setBackHandler(null);
+      } else {
+        // Navigated to a trip (e.g. forward button)
+        setUrlTripId(id);
+        setCurrentTripId(id);
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [backHandler]); // Re-bind when backHandler changes
+
+  // Push history when entering modal state
+  useEffect(() => {
+    if (backHandler && !modalHistoryPushed.current) {
+      // Push a new state for the modal
+      window.history.pushState({ modal: true }, '');
+      modalHistoryPushed.current = true;
+    } else if (!backHandler && modalHistoryPushed.current) {
+      // Modal closed programmatically (not by back button)
+      // We should revert the history push to avoid "forward" button enabling
+      // But calling history.back() here might trigger popstate and cause loops or issues
+      // if not careful. 
+      // Safe approach: just leave the history entry. User will have to press back twice to exit trip?
+      // Or better: use history.back() but ignore the next popstate?
+      
+      // Let's try simply: if we are here, it means state changed without popstate.
+      // We can try to go back.
+      window.history.back();
+      modalHistoryPushed.current = false;
     }
-    
-    // Always clear URL params when going back to list
-    window.history.pushState({}, '', window.location.pathname);
-    setUrlTripId(null);
-    setCurrentTripId(null);
-    setIsCreating(false);
+  }, [backHandler]);
+
+  const handleSelectTrip = (id: string) => {
+    setCurrentTripId(id);
+    const url = new URL(window.location.href);
+    url.searchParams.set('trip', id);
+    window.history.pushState({ tripId: id }, '', url.toString());
+  };
+
+  const handleBack = () => {
+    window.history.back();
   };
 
   const handleSetBackHandler = useCallback((handler: (() => boolean) | null) => {
@@ -167,7 +228,7 @@ export default function App() {
         ) : (
           <TripList 
             trips={trips} 
-            onSelect={setCurrentTripId} 
+            onSelect={handleSelectTrip} 
             onCreateNew={() => setIsCreating(true)} 
             onDelete={deleteTrip} 
           />
