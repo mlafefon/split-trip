@@ -690,8 +690,8 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
                         }
                       }}
                     >
-                      <div className={`w-5 h-5 ${isTransfer ? 'rounded-full' : 'rounded'} border flex items-center justify-center transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300'}`}>
-                        {isSelected && (isTransfer ? <div className="w-2 h-2 rounded-full bg-white" /> : <Check className="w-3 h-3" />)}
+                      <div className={`w-6 h-6 ${isTransfer ? 'rounded-full' : 'rounded-md'} border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300'}`}>
+                        {isSelected && (isTransfer ? <div className="w-2.5 h-2.5 rounded-full bg-white" /> : <Check className="w-4 h-4 stroke-[3]" />)}
                       </div>
                       <div className="flex flex-col">
                         <span className="text-sm font-medium text-slate-700">
