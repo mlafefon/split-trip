@@ -6,7 +6,7 @@ import { Balances } from './Balances';
 import { Statistics } from './Statistics';
 import { ExpenseDetails } from './ExpenseDetails';
 import { ParticipantDetails } from './ParticipantDetails';
-import { Receipt, Users, BarChart3, Plus, Trash2, Pencil, Loader2, ArrowRightLeft, Search, X, ChevronLeft } from 'lucide-react';
+import { Receipt, Users, BarChart3, Plus, Trash2, Pencil, Loader2, ArrowRightLeft, Search, X } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { fetchExchangeRates, formatAmount } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
@@ -361,7 +361,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
                           <span>שולם ע"י {payerText}</span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3 pl-2">
+                      <div className="flex items-center gap-4">
                         <div className="text-left" dir="ltr">
                           {expense.originalCurrency && expense.originalCurrency !== trip.tripCurrency && expense.exchangeRate ? (
                             <>
@@ -379,7 +379,6 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
                             {new Date(expense.date).toLocaleDateString('en-GB')}
                           </div>
                         </div>
-                        <ChevronLeft className="w-5 h-5 text-slate-300" />
                       </div>
                     </div>
                   );
