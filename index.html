@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <link rel="icon" type="image/svg+xml" href="/split-trip/favicon.svg" />
+    <title>ניהול תקציב טיולים</title>
+    <script>
+      // Patch to prevent "Cannot set property fetch of #<Window>" error
+      try {
+        if (window.fetch) {
+          const originalFetch = window.fetch;
+          Object.defineProperty(window, 'fetch', {
+            get: function() { return originalFetch; },
+            set: function() { console.warn('Prevented overwrite of window.fetch'); },
+            configurable: true
+          });
+        }
+      } catch (e) {
+        console.error('Failed to patch fetch:', e);
+      }
+    </script>
+    <script type="module" crossorigin src="/split-trip/assets/index-DJ9gACKY.js"></script>
+    <link rel="stylesheet" crossorigin href="/split-trip/assets/index-yXmm2R4w.css">
+  <link rel="manifest" href="/split-trip/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/split-trip/registerSW.js"></script></head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+
