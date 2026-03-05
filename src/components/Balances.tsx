@@ -1,6 +1,6 @@
 import { Trip } from '../types';
 import { calculateBalances, calculateSettlement } from '../utils/settlement';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronLeft } from 'lucide-react';
 import { formatAmount } from '../utils/currency';
 
 type Props = {
@@ -32,20 +32,23 @@ export const Balances = ({ trip, exchangeRate, onSelectParticipant }: Props) => 
                 className={`bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center ${onSelectParticipant ? 'cursor-pointer hover:bg-slate-50 transition-colors' : ''}`}
               >
                 <div className="font-bold text-slate-800">{getParticipantName(id)}</div>
-                <div className={`text-left ${isPositive ? 'text-emerald-600' : isNegative ? 'text-red-500' : 'text-slate-400'}`} dir="ltr">
-                  <div className="font-bold">
-                    {isPositive ? '+' : ''}{formatAmount(balance)} {trip.tripCurrency}
-                  </div>
-                  <div className="text-xs mt-0.5 flex items-center gap-2">
-                    {exchangeRate && trip.baseCurrency !== trip.tripCurrency && !isZero && (
-                      <span className="opacity-60">
-                        ≈ {isPositive ? '+' : ''}{formatAmount(balance * exchangeRate)} {trip.baseCurrency}
+                <div className="flex items-center gap-3 pl-2">
+                  <div className={`text-left ${isPositive ? 'text-emerald-600' : isNegative ? 'text-red-500' : 'text-slate-400'}`} dir="ltr">
+                    <div className="font-bold">
+                      {isPositive ? '+' : ''}{formatAmount(balance)} {trip.tripCurrency}
+                    </div>
+                    <div className="text-xs mt-0.5 flex items-center gap-2">
+                      {exchangeRate && trip.baseCurrency !== trip.tripCurrency && !isZero && (
+                        <span className="opacity-60">
+                          ≈ {isPositive ? '+' : ''}{formatAmount(balance * exchangeRate)} {trip.baseCurrency}
+                        </span>
+                      )}
+                      <span className="opacity-80">
+                        {isPositive ? 'חייבים לו' : isNegative ? 'חייב לאחרים' : 'מאוזן'}
                       </span>
-                    )}
-                    <span className="opacity-80">
-                      {isPositive ? 'חייבים לו' : isNegative ? 'חייב לאחרים' : 'מאוזן'}
-                    </span>
+                    </div>
                   </div>
+                  <ChevronLeft className="w-5 h-5 text-slate-300" />
                 </div>
               </div>
             );
