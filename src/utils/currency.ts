@@ -10,10 +10,6 @@ export const fetchExchangeRates = async (baseCurrency: string = 'USD') => {
   }
 };
 
-export const convertCurrency = (amount: number, fromRate: number, toRate: number) => {
-  return (amount / fromRate) * toRate;
-};
-
 export const CURRENCIES = [
   { code: 'ILS', name: 'ישראל - שקל חדש' },
   { code: 'USD', name: 'ארה"ב - דולר' },
