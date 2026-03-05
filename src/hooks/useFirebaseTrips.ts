@@ -127,6 +127,9 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
       localTokens[trip.id] = editCode;
       localStorage.setItem('tripTokens', JSON.stringify(localTokens));
 
+      // Optimistically update local state so we can navigate immediately
+      setTrips(prev => [tripWithCode, ...prev]);
+
       return trip.id;
     } catch (err) {
       console.error('Error creating trip:', err);
