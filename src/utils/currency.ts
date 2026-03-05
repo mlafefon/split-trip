@@ -74,3 +74,10 @@ export const CURRENCIES = [
   { code: 'TZS', name: 'טנזניה - שילינג' },
   { code: 'KES', name: 'קניה - שילינג' },
 ].sort((a, b) => a.name.localeCompare(b.name, 'he'));
+
+export const formatAmount = (amount: number): string => {
+  if (amount % 1 === 0) {
+    return amount.toFixed(0);
+  }
+  return amount.toFixed(2);
+};

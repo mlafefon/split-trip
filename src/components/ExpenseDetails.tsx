@@ -1,6 +1,7 @@
 import { Trip, Expense } from '../types';
 import { ICON_MAP } from '../utils/categories';
 import { ArrowRightLeft, Pencil, Trash2, ArrowRight, Calendar, User, Users, FileText } from 'lucide-react';
+import { formatAmount } from '../utils/currency';
 
 type Props = {
   trip: Trip;
@@ -38,11 +39,11 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
         </div>
         <h2 className="text-2xl font-bold text-slate-800 text-center">{expense.description}</h2>
         <div className="text-3xl font-bold text-indigo-600 mt-2" dir="ltr">
-          {expense.amount.toFixed(2)} {trip.tripCurrency}
+          {formatAmount(expense.amount)} {trip.tripCurrency}
         </div>
         {expense.originalCurrency && expense.originalCurrency !== trip.tripCurrency && expense.exchangeRate && (
           <div className="text-sm text-slate-400 mt-1" dir="ltr">
-            ({(expense.amount / expense.exchangeRate).toFixed(2)} {expense.originalCurrency})
+            ({formatAmount(expense.amount / expense.exchangeRate)} {expense.originalCurrency})
           </div>
         )}
         <div className="flex items-center gap-2 mt-4 text-slate-500 bg-slate-50 px-3 py-1.5 rounded-full text-sm">
@@ -62,7 +63,7 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
             {payers.map((payer, idx) => (
               <div key={idx} className="flex justify-between items-center">
                 <span className="text-slate-700 font-medium">{getParticipantName(payer.participantId)}</span>
-                <span className="text-slate-600" dir="ltr">{payer.amount.toFixed(2)} {trip.tripCurrency}</span>
+                <span className="text-slate-600" dir="ltr">{formatAmount(payer.amount)} {trip.tripCurrency}</span>
               </div>
             ))}
           </div>
@@ -78,7 +79,7 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
             {expense.splits.map((split, idx) => (
               <div key={idx} className="flex justify-between items-center">
                 <span className="text-slate-700 font-medium">{getParticipantName(split.participantId)}</span>
-                <span className="text-slate-600" dir="ltr">{split.amount.toFixed(2)} {trip.tripCurrency}</span>
+                <span className="text-slate-600" dir="ltr">{formatAmount(split.amount)} {trip.tripCurrency}</span>
               </div>
             ))}
           </div>

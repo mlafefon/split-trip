@@ -1,6 +1,7 @@
 import { Trip } from '../types';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label } from 'recharts';
 import { ICON_MAP } from '../utils/categories';
+import { formatAmount } from '../utils/currency';
 
 type Props = {
   trip: Trip;
@@ -75,13 +76,13 @@ export const Statistics = ({ trip }: Props) => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                   <Label 
-                    value={`${totalCategoryExpenses.toFixed(0)} ${trip.tripCurrency}`} 
+                    value={`${formatAmount(totalCategoryExpenses)} ${trip.tripCurrency}`} 
                     position="center" 
                     className="text-xl font-bold fill-slate-700"
                   />
                 </Pie>
                 <Tooltip 
-                  formatter={(value: number) => [`${value.toFixed(2)} ${trip.tripCurrency}`, 'סכום']}
+                  formatter={(value: number) => [`${formatAmount(value)} ${trip.tripCurrency}`, 'סכום']}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -98,7 +99,7 @@ export const Statistics = ({ trip }: Props) => {
                     <span className="text-slate-700">{cat.name}</span>
                   </div>
                   <div className="text-slate-500" dir="ltr">
-                    {cat.value.toFixed(2)} {trip.tripCurrency} ({((cat.value / totalCategoryExpenses) * 100).toFixed(1)}%)
+                    {formatAmount(cat.value)} {trip.tripCurrency} ({((cat.value / totalCategoryExpenses) * 100).toFixed(1)}%)
                   </div>
                 </div>
               );
@@ -127,7 +128,7 @@ export const Statistics = ({ trip }: Props) => {
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value: number) => [`${value.toFixed(2)} ${trip.tripCurrency}`, 'סכום']}
+                  formatter={(value: number) => [`${formatAmount(value)} ${trip.tripCurrency}`, 'סכום']}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -140,7 +141,7 @@ export const Statistics = ({ trip }: Props) => {
                   <span className="text-slate-700">{p.name}</span>
                 </div>
                 <div className="text-slate-500" dir="ltr">
-                  {p.value.toFixed(2)} {trip.tripCurrency} ({((p.value / totalExpenses) * 100).toFixed(1)}%)
+                  {formatAmount(p.value)} {trip.tripCurrency} ({((p.value / totalExpenses) * 100).toFixed(1)}%)
                 </div>
               </div>
             ))}

@@ -1,6 +1,7 @@
 import { Trip } from '../types';
 import { calculateBalances, calculateSettlement } from '../utils/settlement';
 import { ArrowLeft } from 'lucide-react';
+import { formatAmount } from '../utils/currency';
 
 type Props = {
   trip: Trip;
@@ -33,12 +34,12 @@ export const Balances = ({ trip, exchangeRate, onSelectParticipant }: Props) => 
                 <div className="font-bold text-slate-800">{getParticipantName(id)}</div>
                 <div className={`text-left ${isPositive ? 'text-emerald-600' : isNegative ? 'text-red-500' : 'text-slate-400'}`} dir="ltr">
                   <div className="font-bold">
-                    {isPositive ? '+' : ''}{balance.toFixed(2)} {trip.tripCurrency}
+                    {isPositive ? '+' : ''}{formatAmount(balance)} {trip.tripCurrency}
                   </div>
                   <div className="text-xs mt-0.5 flex items-center gap-2">
                     {exchangeRate && trip.baseCurrency !== trip.tripCurrency && !isZero && (
                       <span className="opacity-60">
-                        ≈ {isPositive ? '+' : ''}{(balance * exchangeRate).toFixed(2)} {trip.baseCurrency}
+                        ≈ {isPositive ? '+' : ''}{formatAmount(balance * exchangeRate)} {trip.baseCurrency}
                       </span>
                     )}
                     <span className="opacity-80">
@@ -76,11 +77,11 @@ export const Balances = ({ trip, exchangeRate, onSelectParticipant }: Props) => 
                   </div>
                   
                   <div className="flex flex-col items-center text-indigo-600 px-2" dir="ltr">
-                    <div className="font-bold whitespace-nowrap">{t.amount.toFixed(2)} {trip.tripCurrency}</div>
+                    <div className="font-bold whitespace-nowrap">{formatAmount(t.amount)} {trip.tripCurrency}</div>
                     <ArrowLeft className="w-5 h-5 my-1" />
                     {exchangeRate && trip.baseCurrency !== trip.tripCurrency && (
                       <div className="text-xs text-slate-400 whitespace-nowrap">
-                        ≈ {(t.amount * exchangeRate).toFixed(2)} {trip.baseCurrency}
+                        ≈ {formatAmount(t.amount * exchangeRate)} {trip.baseCurrency}
                       </div>
                     )}
                   </div>

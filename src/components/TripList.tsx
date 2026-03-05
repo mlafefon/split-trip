@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Trip } from '../types';
 import { Plane, Users, Calendar, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
+import { formatAmount } from '../utils/currency';
 
 type Props = {
   trips: Trip[];
@@ -93,10 +94,9 @@ export const TripList = ({ trips, onSelect, onCreateNew, onDelete }: Props) => {
                   סה"כ הוצאות:
                 </span>
                 <span className="font-bold text-indigo-600">
-                  {trip.expenses
+                  {formatAmount(trip.expenses
                     .filter(exp => exp.tag !== 'העברה')
-                    .reduce((sum, exp) => sum + exp.amount, 0)
-                    .toFixed(2)} {trip.tripCurrency}
+                    .reduce((sum, exp) => sum + exp.amount, 0))} {trip.tripCurrency}
                 </span>
               </div>
             </div>

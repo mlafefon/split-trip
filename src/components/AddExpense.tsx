@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trip, Expense, ExpenseSplit, Category } from '../types';
 import { Check, Plus, Settings, Loader2, ChevronDown, Lock, ArrowRight } from 'lucide-react';
-import { CURRENCIES, fetchExchangeRates } from '../utils/currency';
+import { CURRENCIES, fetchExchangeRates, formatAmount } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
 import { CategoryEditor } from './CategoryEditor';
 import { CurrencySelect } from './CurrencySelect';
@@ -49,7 +49,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
   const [amount, setAmount] = useState(() => {
     if (initialExpense) {
       const rate = initialExpense.exchangeRate || 1;
-      return (initialExpense.amount / rate).toFixed(2);
+      return formatAmount(initialExpense.amount / rate);
     }
     return '';
   });
@@ -119,7 +119,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
     if (initialExpense && initialExpense.splits.length > 0) {
       // Load existing splits
       initialExpense.splits.forEach(s => {
-        initialSplits[s.participantId] = (s.amount / rate).toFixed(2);
+        initialSplits[s.participantId] = formatAmount(s.amount / rate);
       });
       // Ensure unselected have 0 or empty
       trip.participants.forEach(p => {
@@ -161,7 +161,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
     autoParticipants.forEach((id, idx) => {
       let val = base;
       if (idx === 0) val = Number((val + remainder).toFixed(2));
-      newSplits[id] = val.toFixed(2);
+      newSplits[id] = formatAmount(val);
     });
 
     return newSplits;
@@ -188,7 +188,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
       selectedBeneficiaries.forEach((id, index) => {
         let val = baseAmount;
         if (index === 0) val = Number((val + remainder).toFixed(2));
-        newSplits[id] = val.toFixed(2);
+        newSplits[id] = formatAmount(val);
       });
     } else {
       // PERCENTAGE
@@ -198,7 +198,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
       selectedBeneficiaries.forEach((id, index) => {
         let val = basePercent;
         if (index === 0) val = Number((val + remainder).toFixed(2));
-        newSplits[id] = val.toFixed(2);
+        newSplits[id] = formatAmount(val);
       });
     }
     setSplitValues(newSplits);
@@ -292,7 +292,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
       Object.entries(splitValues).forEach(([id, val]) => {
         const numVal = parseFloat(val as string);
         if (!isNaN(numVal)) {
-          newValues[id] = ((numVal / total) * 100).toFixed(2);
+          newValues[id] = formatAmount((numVal / total) * 100);
         } else {
           newValues[id] = '0';
         }
@@ -302,7 +302,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
       Object.entries(splitValues).forEach(([id, val]) => {
         const numVal = parseFloat(val as string);
         if (!isNaN(numVal)) {
-          newValues[id] = ((numVal / 100) * total).toFixed(2);
+          newValues[id] = formatAmount((numVal / 100) * total);
         } else {
           newValues[id] = '0';
         }
@@ -519,8 +519,8 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
                    </>
                  ) : (
                    <span>
-                     ≈ {(parseFloat(amount || '0') * parseFloat(exchangeRate || '0')).toFixed(2)} {trip.tripCurrency}
-                     <span className="opacity-70 mx-1">(1 {currency} = {parseFloat(exchangeRate || '0').toFixed(2)} {trip.tripCurrency})</span>
+                     ≈ {formatAmount(parseFloat(amount || '0') * parseFloat(exchangeRate || '0'))} {trip.tripCurrency}
+                     <span className="opacity-70 mx-1">(1 {currency} = {formatAmount(parseFloat(exchangeRate || '0'))} {trip.tripCurrency})</span>
                    </span>
                  )}
               </div>
@@ -599,7 +599,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
                   
                   return (
                     <span className={isMatch ? 'text-emerald-600 font-medium' : 'text-red-500 font-medium'}>
-                      סה"כ שולם: {sum.toFixed(2)} / {total.toFixed(2)}
+                      סה"כ שולם: {formatAmount(sum)} / {formatAmount(total)}
                     </span>
                   );
                 })()}
@@ -664,7 +664,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
                  const total = parseFloat(amount || '0');
                  if (!isNaN(pct) && !isNaN(total)) {
                     const val = (pct / 100) * total;
-                    splitAmountText = `(${val.toFixed(2)} ${currency})`;
+                    splitAmountText = `(${formatAmount(val)} ${currency})`;
                  }
               }
 
@@ -740,7 +740,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
             
             {!isTransfer && (
               <div className="text-xs text-slate-500 text-left mt-2 pt-2 border-t border-slate-200" dir="ltr">
-                סה"כ: {Object.values(splitValues).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0).toFixed(2)} / {splitMode === 'EXACT' ? (amount || '0.00') : '100%'}
+                סה"כ: {formatAmount(Object.values(splitValues).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0))} / {splitMode === 'EXACT' ? (amount || '0.00') : '100%'}
               </div>
             )}
           </div>

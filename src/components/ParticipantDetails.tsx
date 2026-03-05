@@ -1,5 +1,6 @@
 import { Trip, Expense } from '../types';
 import { ArrowRight, ArrowRightLeft, Receipt } from 'lucide-react';
+import { formatAmount } from '../utils/currency';
 
 type Props = {
   trip: Trip;
@@ -78,7 +79,7 @@ export const ParticipantDetails = ({ trip, participantId, onClose, onSelectExpen
       <div className="flex flex-col items-center mb-6 mt-2">
         <h2 className="text-2xl font-bold text-slate-800 text-center">{participant.name}</h2>
         <div className={`text-3xl font-bold mt-2 ${totalBalance >= 0 ? 'text-emerald-600' : 'text-red-500'}`} dir="ltr">
-          {totalBalance >= 0 ? '+' : ''}{totalBalance.toFixed(2)} {trip.tripCurrency}
+          {totalBalance >= 0 ? '+' : ''}{formatAmount(Math.abs(totalBalance))} {trip.tripCurrency}
         </div>
         <div className="text-sm text-slate-500 mt-1">
           {totalBalance >= 0 ? 'חייבים לו/ה' : 'חייב/ת'}
@@ -107,7 +108,7 @@ export const ParticipantDetails = ({ trip, participantId, onClose, onSelectExpen
               
               <div className="flex flex-col items-end">
                 <div className={`font-bold text-lg whitespace-nowrap ${net >= 0 ? 'text-emerald-600' : 'text-red-500'}`} dir="ltr">
-                  {net >= 0 ? '+' : ''}{net.toFixed(2)} {trip.tripCurrency}
+                  {net >= 0 ? '+' : ''}{formatAmount(Math.abs(net))} {trip.tripCurrency}
                 </div>
                 <div className="text-[10px] text-slate-400 mt-0.5" dir="ltr">
                   {new Date(expense.date).toLocaleDateString('he-IL')}

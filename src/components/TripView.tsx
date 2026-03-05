@@ -8,7 +8,7 @@ import { ExpenseDetails } from './ExpenseDetails';
 import { ParticipantDetails } from './ParticipantDetails';
 import { Receipt, Users, BarChart3, Plus, Trash2, Pencil, Loader2, ArrowRightLeft, Search, X } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
-import { fetchExchangeRates } from '../utils/currency';
+import { fetchExchangeRates, formatAmount } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
 
 type Props = {
@@ -247,7 +247,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
         
         <div className="text-indigo-100 text-sm mb-1">סה"כ הוצאות בטיול</div>
         <div className="text-4xl font-bold mb-2" dir="ltr">
-          {totalSpent.toFixed(2)} <span className="text-2xl">{trip.tripCurrency}</span>
+          {formatAmount(totalSpent)} <span className="text-2xl">{trip.tripCurrency}</span>
         </div>
         {trip.baseCurrency !== trip.tripCurrency && (
           <div className="text-indigo-200 text-sm bg-white/10 inline-block px-3 py-1 rounded-lg backdrop-blur-sm min-h-[32px]">
@@ -258,9 +258,9 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
               </div>
             ) : (
               <div dir="ltr" className="flex items-center gap-2">
-                ≈ {(totalSpent * (exchangeRate || 1)).toFixed(2)} {trip.baseCurrency} 
+                ≈ {formatAmount(totalSpent * (exchangeRate || 1))} {trip.baseCurrency} 
                 <span className="mx-2 opacity-50">|</span>
-                <span className="opacity-70">1 {trip.tripCurrency} = {exchangeRate?.toFixed(2)} {trip.baseCurrency}</span>
+                <span className="opacity-70">1 {trip.tripCurrency} = {formatAmount(exchangeRate || 0)} {trip.baseCurrency}</span>
               </div>
             )}
           </div>
@@ -366,14 +366,14 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
                           {expense.originalCurrency && expense.originalCurrency !== trip.tripCurrency && expense.exchangeRate ? (
                             <>
                               <div className="font-bold text-slate-800">
-                                {(expense.amount / expense.exchangeRate).toFixed(2)} {expense.originalCurrency}
+                                {formatAmount(expense.amount / expense.exchangeRate)} {expense.originalCurrency}
                               </div>
                               <div className="text-[10px] text-slate-400 font-medium">
-                                {expense.amount.toFixed(2)} {trip.tripCurrency}
+                                {formatAmount(expense.amount)} {trip.tripCurrency}
                               </div>
                             </>
                           ) : (
-                            <div className="font-bold text-slate-800">{expense.amount.toFixed(2)} {trip.tripCurrency}</div>
+                            <div className="font-bold text-slate-800">{formatAmount(expense.amount)} {trip.tripCurrency}</div>
                           )}
                           <div className="text-xs text-slate-400 text-right" dir="rtl">
                             {new Date(expense.date).toLocaleDateString('en-GB')}
