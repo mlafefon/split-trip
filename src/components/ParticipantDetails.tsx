@@ -1,5 +1,5 @@
 import { Trip, Expense } from '../types';
-import { ArrowRight, ArrowRightLeft, Receipt } from 'lucide-react';
+import { ArrowRight, ArrowRightLeft, Receipt, ChevronLeft } from 'lucide-react';
 import { formatAmount } from '../utils/currency';
 
 type Props = {
@@ -107,10 +107,13 @@ export const ParticipantDetails = ({ trip, participantId, onClose, onSelectExpen
               </div>
               
               <div className="flex flex-col items-end">
-                <div className={`font-bold text-lg whitespace-nowrap ${net >= 0 ? 'text-emerald-600' : 'text-red-500'}`} dir="ltr">
-                  {net >= 0 ? '+' : ''}{formatAmount(Math.abs(net))} {trip.tripCurrency}
+                <div className="flex items-center gap-2">
+                  <div className={`font-bold text-lg whitespace-nowrap ${net >= 0 ? 'text-emerald-600' : 'text-red-500'}`} dir="ltr">
+                    {net >= 0 ? '+' : ''}{formatAmount(Math.abs(net))} {trip.tripCurrency}
+                  </div>
+                  <ChevronLeft className="w-5 h-5 text-slate-300" />
                 </div>
-                <div className="text-[10px] text-slate-400 mt-0.5" dir="ltr">
+                <div className="text-[10px] text-slate-400 mt-0.5 pr-7" dir="ltr">
                   {new Date(expense.date).toLocaleDateString('he-IL')}
                 </div>
               </div>
