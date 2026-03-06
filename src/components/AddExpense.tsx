@@ -334,12 +334,14 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
     const numAmount = parseFloat(amount);
     const rate = parseFloat(exchangeRate);
 
-    if (!description.trim() || isNaN(numAmount) || numAmount <= 0 || isNaN(rate) || rate <= 0) return;
+    if (isNaN(numAmount) || numAmount <= 0 || isNaN(rate) || rate <= 0) return;
 
     if (!tag) {
       alert('חובה לבחור קטגוריה');
       return;
     }
+
+    const finalDescription = description.trim() || tag;
 
     if (payerMode === 'SINGLE' && !singlePayer) {
       alert('חובה לבחור מי שילם');
@@ -403,7 +405,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
 
     const expense: Expense = {
       id: initialExpense?.id || crypto.randomUUID(),
-      description: description.trim(),
+      description: finalDescription,
       amount: finalAmountInTripCurrency,
       date: new Date(date).toISOString(),
       payers: finalPayers,
@@ -450,12 +452,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                     <button
                       key={cat.id}
                       type="button"
-                      onClick={() => {
-                        if (!description || description === tag) {
-                          setDescription(cat.name);
-                        }
-                        setTag(cat.name);
-                      }}
+                      onClick={() => setTag(cat.name)}
                       className={`flex flex-col items-center gap-1 p-1 rounded-xl transition-all ${isSelected ? 'scale-110' : 'opacity-70 hover:opacity-100'}`}
                       title={cat.name}
                     >
@@ -487,12 +484,11 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
             <label className="block text-sm font-medium text-slate-700 mb-1">תיאור</label>
             <input 
               type="text" 
-              required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={isTransfer}
               className={`w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none ${isTransfer ? 'bg-slate-50 text-slate-500' : ''}`}
-              placeholder="לדוגמה: ארוחת ערב, מונית..."
+              placeholder={tag || "לדוגמה: ארוחת ערב, מונית..."}
             />
           </div>
 
