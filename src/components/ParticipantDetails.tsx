@@ -1,6 +1,7 @@
 import { Trip, Expense } from '../types';
 import { ArrowRight, ArrowRightLeft, Receipt, ChevronLeft } from 'lucide-react';
 import { formatAmount } from '../utils/currency';
+import { ICON_MAP } from '../utils/categories';
 
 type Props = {
   trip: Trip;
@@ -93,33 +94,44 @@ export const ParticipantDetails = ({ trip, participantId, onClose, onSelectExpen
             <p>אין פעילות כספית למשתתף זה.</p>
           </div>
         ) : (
-          transactions.map(({ expense, net, details }) => (
-            <div 
-              key={expense.id} 
-              onClick={() => onSelectExpense(expense.id)}
-              className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition-colors"
-            >
-              <div className="flex-1 min-w-0 ml-4">
-                <div className="font-bold text-slate-800 truncate">{expense.description}</div>
-                <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                  {expense.tag === 'העברה' ? <ArrowRightLeft className="w-3 h-3" /> : <Receipt className="w-3 h-3" />}
-                  <span className="truncate">{details}</span>
-                </div>
-              </div>
-              
-              <div className="flex flex-col items-end">
-                <div className="flex items-center gap-2">
-                  <div className={`font-bold text-lg whitespace-nowrap ${net >= 0 ? 'text-emerald-600' : 'text-red-500'}`} dir="ltr">
-                    {net >= 0 ? '+' : ''}{formatAmount(Math.abs(net))} {trip.tripCurrency}
+          transactions.map(({ expense, net, details }) => {
+            const category = trip.categories.find(c => c.name === expense.tag);
+            let Icon = category ? ICON_MAP[category.icon] : Receipt;
+            let iconColor = category?.color;
+            
+            if (expense.tag === 'העברה') {
+              Icon = ArrowRightLeft;
+              iconColor = '#f97316';
+            }
+
+            return (
+              <div 
+                key={expense.id} 
+                onClick={() => onSelectExpense(expense.id)}
+                className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-100 transition-colors"
+              >
+                <div className="flex-1 min-w-0 ml-4">
+                  <div className="font-bold text-slate-800 truncate">{expense.description}</div>
+                  <div className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+                    <Icon className="w-3 h-3" style={{ color: iconColor }} />
+                    <span className="truncate">{details}</span>
                   </div>
-                  <ChevronLeft className="w-5 h-5 text-slate-300" />
                 </div>
-                <div className="text-[10px] text-slate-400 mt-0.5 pr-7" dir="ltr">
-                  {new Date(expense.date).toLocaleDateString('he-IL')}
+                
+                <div className="flex flex-col items-end">
+                  <div className="flex items-center gap-2">
+                    <div className={`font-bold text-lg whitespace-nowrap ${net >= 0 ? 'text-emerald-600' : 'text-red-500'}`} dir="ltr">
+                      {net >= 0 ? '+' : ''}{formatAmount(Math.abs(net))} {trip.tripCurrency}
+                    </div>
+                    <ChevronLeft className="w-5 h-5 text-slate-300" />
+                  </div>
+                  <div className="text-[10px] text-slate-400 mt-0.5 pr-7" dir="ltr">
+                    {new Date(expense.date).toLocaleDateString('he-IL')}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
