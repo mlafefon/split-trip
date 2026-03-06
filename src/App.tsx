@@ -5,6 +5,7 @@ import { TripForm } from './components/TripForm';
 import { useFirebaseTrips } from './hooks/useFirebaseTrips';
 import { ChevronRight, Loader2, Share2, Pencil } from 'lucide-react';
 import { ShareDialog } from './components/ShareDialog';
+import { InstallPrompt } from './components/InstallPrompt';
 
 export default function App() {
   // Check for trip ID in URL query params
@@ -253,6 +254,8 @@ export default function App() {
           />
         )}
       </main>
+      
+      <InstallPrompt />
     </div>
   );
 }
