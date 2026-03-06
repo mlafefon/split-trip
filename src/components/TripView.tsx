@@ -35,6 +35,10 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
   const [settleDebtData, setSettleDebtData] = useState<{ from: string; to: string; amount: number } | null>(null);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeTab, addMode, editingExpenseId, viewingExpenseId, viewingParticipantId, isEditing]);
+
+  useEffect(() => {
     setBackHandler(() => {
       if (addMode !== 'NONE') {
         setAddMode('NONE');

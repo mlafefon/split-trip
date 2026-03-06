@@ -61,6 +61,11 @@ export default function App() {
     return (activeTrip.editCode && localToken === activeTrip.editCode) || !activeTrip.editCode;
   })();
 
+  // Scroll to top when view changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeTrip?.id, isCreating]);
+
   // Ref to track if we pushed a modal state
   const modalHistoryPushed = useRef(false);
 
