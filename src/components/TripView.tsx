@@ -152,7 +152,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
     if (payerNames.some(name => name.toLowerCase().includes(query))) return true;
     
     return false;
-  });
+  }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   if (isEditing) {
     return (

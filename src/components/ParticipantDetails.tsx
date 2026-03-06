@@ -69,7 +69,8 @@ export const ParticipantDetails = ({ trip, participantId, onClose, onSelectExpen
       net,
       details
     };
-  }).filter((t): t is NonNullable<typeof t> => t !== null);
+  }).filter((t): t is NonNullable<typeof t> => t !== null)
+    .sort((a, b) => new Date(b.expense.date).getTime() - new Date(a.expense.date).getTime());
 
   // Calculate total balance
   const totalBalance = transactions.reduce((sum, t) => sum + t.net, 0);
