@@ -1,5 +1,5 @@
 import { Trip } from '../types';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
 import { ICON_MAP } from '../utils/categories';
 import { formatAmount } from '../utils/currency';
 
@@ -14,11 +14,27 @@ export const Statistics = ({ trip }: Props) => {
   const categoryTotals: Record<string, number> = {};
   let totalCategoryExpenses = 0;
   
+  // Daily Data Processing
+  const dailyMap: Record<string, any> = {};
+  const usedCategories = new Set<string>();
+
   trip.expenses.forEach(e => {
     if (e.tag === 'העברה') return; // Skip transfers
+    
+    // Category Totals
     const tagName = e.tag || 'ללא קטגוריה';
     categoryTotals[tagName] = (categoryTotals[tagName] || 0) + e.amount;
     totalCategoryExpenses += e.amount;
+
+    // Daily Data
+    const dateKey = new Date(e.date).toISOString().split('T')[0];
+    const displayDate = new Date(e.date).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' });
+    
+    if (!dailyMap[dateKey]) {
+      dailyMap[dateKey] = { dateKey, name: displayDate };
+    }
+    dailyMap[dateKey][tagName] = (dailyMap[dateKey][tagName] || 0) + e.amount;
+    usedCategories.add(tagName);
   });
 
   const categoryData = Object.entries(categoryTotals).map(([name, value]) => {
@@ -30,6 +46,8 @@ export const Statistics = ({ trip }: Props) => {
       icon: category?.icon || 'HelpCircle' // fallback icon
     };
   }).sort((a, b) => b.value - a.value);
+
+  const dailyData = Object.values(dailyMap).sort((a: any, b: any) => a.dateKey.localeCompare(b.dateKey));
 
   const totalExpenses = trip.expenses.reduce((sum, e) => sum + e.amount, 0);
 
@@ -145,6 +163,40 @@ export const Statistics = ({ trip }: Props) => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {dailyData.length > 0 && (
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 text-center">הוצאות יומיות לפי קטגוריה</h3>
+          <div className="h-[300px] w-full" dir="ltr">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={dailyData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" fontSize={12} tickMargin={10} />
+                <YAxis fontSize={12} />
+                <Tooltip 
+                  formatter={(value: number) => [`${formatAmount(value)} ${trip.tripCurrency}`]}
+                  labelStyle={{ textAlign: 'right' }}
+                />
+                <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                {Array.from(usedCategories).map((catName) => {
+                  const category = trip.categories.find(c => c.name === catName);
+                  const color = category?.color || '#cbd5e1';
+                  return (
+                    <Bar 
+                      key={catName} 
+                      dataKey={catName} 
+                      stackId="a" 
+                      fill={color} 
+                      name={catName}
+                      radius={[4, 4, 0, 0]}
+                    />
+                  );
+                })}
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       )}

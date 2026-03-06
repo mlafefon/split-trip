@@ -612,7 +612,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                   
                   return (
                     <span className={isMatch ? 'text-emerald-600 font-medium' : 'text-red-500 font-medium'}>
-                      סה"כ שולם: {formatAmount(sum)} / {formatAmount(total)}
+                      נשאר לשלם: {formatAmount(total - sum)} עד ל {formatAmount(total)}
                     </span>
                   );
                 })()}
