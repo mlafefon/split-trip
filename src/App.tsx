@@ -3,7 +3,7 @@ import { TripList } from './components/TripList';
 import { TripView } from './components/TripView';
 import { TripForm } from './components/TripForm';
 import { useFirebaseTrips } from './hooks/useFirebaseTrips';
-import { ChevronRight, Loader2, Share2 } from 'lucide-react';
+import { ChevronRight, Loader2, Share2, Pencil } from 'lucide-react';
 import { ShareDialog } from './components/ShareDialog';
 
 export default function App() {
@@ -11,6 +11,7 @@ export default function App() {
   const [urlTripId, setUrlTripId] = useState<string | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [isEditingTrip, setIsEditingTrip] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -190,15 +191,26 @@ export default function App() {
             </h1>
           </div>
           
-          {activeTrip && !isCreating && (
-            <button 
-              onClick={handleShare}
-              className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-              title="שתף טיול"
-            >
-              <Share2 className="w-5 h-5" />
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {activeTrip && !isCreating && activeTripCanEdit && !isEditingTrip && (
+              <button 
+                onClick={() => setIsEditingTrip(true)}
+                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                title="ערוך פרטי טיול"
+              >
+                <Pencil className="w-5 h-5" />
+              </button>
+            )}
+            {activeTrip && !isCreating && (
+              <button 
+                onClick={handleShare}
+                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                title="שתף טיול"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -220,6 +232,8 @@ export default function App() {
               updateTrip={updateTrip} 
               setBackHandler={handleSetBackHandler}
               isReadOnly={!activeTripCanEdit}
+              isEditing={isEditingTrip}
+              onEditChange={setIsEditingTrip}
             />
             <ShareDialog 
               isOpen={showShareDialog}

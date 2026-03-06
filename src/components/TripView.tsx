@@ -16,11 +16,13 @@ type Props = {
   updateTrip: (trip: Trip) => void;
   setBackHandler: (handler: (() => boolean) | null) => void;
   isReadOnly?: boolean;
+  isEditing: boolean;
+  onEditChange: (isEditing: boolean) => void;
 };
 
 type Tab = 'EXPENSES' | 'BALANCES' | 'STATISTICS';
 
-export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false }: Props) => {
+export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false, isEditing, onEditChange }: Props) => {
   const [activeTab, setActiveTab] = useState<Tab>('EXPENSES');
   const [addMode, setAddMode] = useState<'NONE' | 'EXPENSE' | 'TRANSFER'>('NONE');
   const [showMenu, setShowMenu] = useState(false);
@@ -28,7 +30,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
   const [viewingExpenseId, setViewingExpenseId] = useState<string | null>(null);
   const [viewingParticipantId, setViewingParticipantId] = useState<string | null>(null);
   const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  // isEditing state removed
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [isFetchingRate, setIsFetchingRate] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,14 +60,14 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
         return true;
       }
       if (isEditing) {
-        setIsEditing(false);
+        onEditChange(false);
         return true;
       }
       return false;
     });
 
     return () => setBackHandler(null);
-  }, [addMode, editingExpenseId, viewingExpenseId, viewingParticipantId, isEditing, setBackHandler]);
+  }, [addMode, editingExpenseId, viewingExpenseId, viewingParticipantId, isEditing, setBackHandler, onEditChange]);
 
   useEffect(() => {
     const getRates = async () => {
@@ -109,7 +111,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
 
   const handleUpdateTrip = (updatedTrip: Trip) => {
     updateTrip(updatedTrip);
-    setIsEditing(false);
+    onEditChange(false);
   };
 
   const handleDeleteExpense = (expenseId: string) => {
@@ -159,7 +161,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
       <TripForm 
         initialTrip={trip}
         onSave={handleUpdateTrip}
-        onCancel={() => setIsEditing(false)}
+        onCancel={() => onEditChange(false)}
       />
     );
   }
@@ -261,18 +263,6 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
 
       {/* Summary Card */}
       <div className="bg-gradient-to-br from-indigo-600 to-violet-600 rounded-3xl p-6 text-white shadow-lg relative">
-        {!isReadOnly && (
-          <>
-            <button 
-              onClick={() => setIsEditing(true)}
-              className="absolute top-4 left-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
-              title="ערוך פרטי טיול"
-            >
-              <Pencil className="w-4 h-4 text-white" />
-            </button>
-          </>
-        )}
-        
         <div className="text-indigo-100 text-sm mb-1">סה"כ הוצאות בטיול</div>
         <div className="text-4xl font-bold mb-2" dir="ltr">
           {formatAmount(totalSpent)} <span className="text-2xl">{trip.tripCurrency}</span>
