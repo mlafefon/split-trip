@@ -32,11 +32,13 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [isFetchingRate, setIsFetchingRate] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [settleDebtData, setSettleDebtData] = useState<{ from: string; to: string; amount: number } | null>(null);
 
   useEffect(() => {
     setBackHandler(() => {
       if (addMode !== 'NONE') {
         setAddMode('NONE');
+        setSettleDebtData(null);
         return true;
       }
       if (editingExpenseId) {
@@ -83,6 +85,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
       expenses: [...trip.expenses, expense]
     });
     setAddMode('NONE');
+    setSettleDebtData(null);
   };
 
   const handleUpdateExpense = (updatedExpense: Expense) => {
@@ -117,6 +120,11 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
       });
       setDeleteExpenseId(null);
     }
+  };
+
+  const handleSettleDebt = (data: { from: string; to: string; amount: number }) => {
+    setSettleDebtData(data);
+    setAddMode('TRANSFER');
   };
 
   const totalSpent = trip.expenses
@@ -164,13 +172,27 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
   }
 
   if (addMode === 'TRANSFER') {
+    const initialData: Partial<Expense> | undefined = settleDebtData ? {
+      amount: settleDebtData.amount,
+      description: 'הסדר חוב',
+      tag: 'העברה',
+      notes: 'הסדר חוב',
+      payers: [{ participantId: settleDebtData.from, amount: settleDebtData.amount }],
+      splits: [{ participantId: settleDebtData.to, amount: settleDebtData.amount }],
+      originalCurrency: trip.tripCurrency
+    } : undefined;
+
     return (
       <AddExpense 
         trip={trip} 
         onSave={handleAddExpense} 
-        onCancel={() => setAddMode('NONE')} 
+        onCancel={() => {
+          setAddMode('NONE');
+          setSettleDebtData(null);
+        }} 
         onUpdateCategories={handleUpdateCategories}
         defaultMode="TRANSFER"
+        initialData={initialData}
       />
     );
   }
@@ -447,6 +469,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
             trip={trip} 
             exchangeRate={exchangeRate} 
             onSelectParticipant={setViewingParticipantId}
+            onSettleDebt={handleSettleDebt}
           />
         )}
 

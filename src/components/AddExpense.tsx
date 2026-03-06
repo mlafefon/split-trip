@@ -10,19 +10,20 @@ import { Select } from './Select';
 type Props = {
   trip: Trip;
   initialExpense?: Expense;
+  initialData?: Partial<Expense>;
   onSave: (expense: Expense) => void;
   onCancel: () => void;
   onUpdateCategories: (categories: Category[]) => void;
   defaultMode?: 'EXPENSE' | 'TRANSFER';
 };
 
-export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCategories, defaultMode = 'EXPENSE' }: Props) => {
-  const isTransfer = defaultMode === 'TRANSFER' || initialExpense?.tag === 'העברה';
+export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel, onUpdateCategories, defaultMode = 'EXPENSE' }: Props) => {
+  const isTransfer = defaultMode === 'TRANSFER' || initialExpense?.tag === 'העברה' || initialData?.tag === 'העברה';
   
-  const [description, setDescription] = useState(initialExpense?.description || (isTransfer ? 'העברה' : ''));
+  const [description, setDescription] = useState(initialExpense?.description || initialData?.description || (isTransfer ? 'העברה' : ''));
   
   // Currency State
-  const [currency, setCurrency] = useState(initialExpense?.originalCurrency || trip.tripCurrency);
+  const [currency, setCurrency] = useState(initialExpense?.originalCurrency || initialData?.originalCurrency || trip.tripCurrency);
   const [exchangeRate, setExchangeRate] = useState(initialExpense?.exchangeRate?.toString() || '1');
   const [isFetchingRate, setIsFetchingRate] = useState(false);
 
@@ -51,11 +52,14 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
       const rate = initialExpense.exchangeRate || 1;
       return formatAmount(initialExpense.amount / rate);
     }
+    if (initialData?.amount) {
+       return formatAmount(initialData.amount);
+    }
     return '';
   });
 
-  const [tag, setTag] = useState(initialExpense?.tag || (isTransfer ? 'העברה' : ''));
-  const [notes, setNotes] = useState(initialExpense?.notes || '');
+  const [tag, setTag] = useState(initialExpense?.tag || initialData?.tag || (isTransfer ? 'העברה' : ''));
+  const [notes, setNotes] = useState(initialExpense?.notes || initialData?.notes || '');
   const [showCategoryEditor, setShowCategoryEditor] = useState(false);
 
   const [date, setDate] = useState(
@@ -71,14 +75,16 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
   const [singlePayer, setSinglePayer] = useState(
     (initialExpense?.payers && initialExpense.payers.length === 1) 
       ? initialExpense.payers[0].participantId 
-      : (initialExpense as any)?.paidBy || ''
+      : (initialExpense as any)?.paidBy || (initialData?.payers?.[0]?.participantId || '')
   );
   const [multiPayers, setMultiPayers] = useState<Record<string, string>>({});
 
   // Split state
   const [splitMode, setSplitMode] = useState<'EXACT' | 'PERCENTAGE'>('EXACT');
   const [selectedBeneficiaries, setSelectedBeneficiaries] = useState<string[]>(
-    initialExpense?.splits.map(s => s.participantId) || (isTransfer ? [] : trip.participants.map(p => p.id))
+    initialExpense?.splits.map(s => s.participantId) || 
+    (initialData?.splits?.map(s => s.participantId) || 
+    (isTransfer ? [] : trip.participants.map(p => p.id)))
   );
   const [splitValues, setSplitValues] = useState<Record<string, string>>({});
   const [manualSplitIds, setManualSplitIds] = useState<string[]>([]);
@@ -125,13 +131,20 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
       trip.participants.forEach(p => {
         if (!initialSplits[p.id]) initialSplits[p.id] = '0';
       });
+    } else if (initialData?.splits && initialData.splits.length > 0) {
+      initialData.splits.forEach(s => {
+        initialSplits[s.participantId] = formatAmount(s.amount);
+      });
+      trip.participants.forEach(p => {
+        if (!initialSplits[p.id]) initialSplits[p.id] = '0';
+      });
     } else {
       trip.participants.forEach(p => {
         initialSplits[p.id] = '';
       });
     }
     setSplitValues(initialSplits);
-  }, [trip.participants, initialExpense]);
+  }, [trip.participants, initialExpense, initialData]);
 
   // Helper to recalculate splits for auto-participants
   const distributeRemaining = (
@@ -429,7 +442,7 @@ export const AddExpense = ({ trip, initialExpense, onSave, onCancel, onUpdateCat
         <div className="space-y-4">
           {!isTransfer && (
             <div>
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              <div className="flex gap-2 overflow-x-auto p-2 scrollbar-hide">
                 {trip.categories.map(cat => {
                   const Icon = ICON_MAP[cat.icon];
                   const isSelected = tag === cat.name;

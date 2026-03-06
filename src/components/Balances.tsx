@@ -7,9 +7,10 @@ type Props = {
   trip: Trip;
   exchangeRate: number | null;
   onSelectParticipant?: (id: string) => void;
+  onSettleDebt?: (data: { from: string; to: string; amount: number }) => void;
 };
 
-export const Balances = ({ trip, exchangeRate, onSelectParticipant }: Props) => {
+export const Balances = ({ trip, exchangeRate, onSelectParticipant, onSettleDebt }: Props) => {
   const balances = calculateBalances(trip);
   const getParticipantName = (id: string) => trip.participants.find(p => p.id === id)?.name || 'לא ידוע';
   const transactions = calculateSettlement(balances);
@@ -92,6 +93,15 @@ export const Balances = ({ trip, exchangeRate, onSelectParticipant }: Props) => 
                   <div className="flex-1 text-center font-medium text-slate-800 bg-slate-50 py-2 rounded-lg">
                     {getParticipantName(t.to)}
                   </div>
+
+                  {onSettleDebt && (
+                    <button
+                      onClick={() => onSettleDebt({ from: t.from, to: t.to, amount: t.amount })}
+                      className="bg-indigo-600 text-white text-xs px-3 py-2 rounded-lg hover:bg-indigo-700 transition-colors whitespace-nowrap"
+                    >
+                      הסדר חוב
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
