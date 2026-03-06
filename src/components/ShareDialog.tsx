@@ -1,6 +1,7 @@
 import React from 'react';
-import { X, Copy, Check, Eye, Pencil } from 'lucide-react';
+import { X, Copy, Check, Eye, Pencil, QrCode } from 'lucide-react';
 import { useState } from 'react';
+import QRCode from "react-qr-code";
 
 type Props = {
   isOpen: boolean;
@@ -14,6 +15,8 @@ type Props = {
 export const ShareDialog = ({ isOpen, onClose, tripId, tripName, editCode, canEdit }: Props) => {
   const [copiedEdit, setCopiedEdit] = useState(false);
   const [copiedView, setCopiedView] = useState(false);
+  const [showQrEdit, setShowQrEdit] = useState(false);
+  const [showQrView, setShowQrView] = useState(false);
 
   if (!isOpen) return null;
 
@@ -43,8 +46,8 @@ export const ShareDialog = ({ isOpen, onClose, tripId, tripName, editCode, canEd
         onClick={onClose}
       />
       
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md relative z-10 overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md relative z-10 overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+        <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50 sticky top-0 z-20">
           <h3 className="font-bold text-lg text-slate-800">שיתוף טיול: {tripName}</h3>
           <button 
             onClick={onClose}
@@ -70,6 +73,17 @@ export const ShareDialog = ({ isOpen, onClose, tripId, tripName, editCode, canEd
                   {editUrl}
                 </div>
                 <button
+                  onClick={() => setShowQrEdit(!showQrEdit)}
+                  className={`p-3 rounded-xl transition-all ${
+                    showQrEdit
+                      ? 'bg-indigo-100 text-indigo-700 border border-indigo-300'
+                      : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200'
+                  }`}
+                  title="הצג QR Code"
+                >
+                  <QrCode className="w-4 h-4" />
+                </button>
+                <button
                   onClick={() => copyToClipboard(editUrl, true)}
                   className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
                     copiedEdit 
@@ -81,6 +95,13 @@ export const ShareDialog = ({ isOpen, onClose, tripId, tripName, editCode, canEd
                   <span className="hidden sm:inline">{copiedEdit ? 'הועתק' : 'העתק'}</span>
                 </button>
               </div>
+              
+              {showQrEdit && (
+                <div className="flex justify-center p-4 bg-white rounded-xl border border-slate-100 shadow-sm animate-in fade-in zoom-in-95 duration-200">
+                  <QRCode value={editUrl} size={150} />
+                </div>
+              )}
+
               <p className="text-xs text-slate-400">
                 * כל מי שיקבל קישור זה יוכל לערוך, להוסיף ולמחוק הוצאות.
               </p>
@@ -103,6 +124,17 @@ export const ShareDialog = ({ isOpen, onClose, tripId, tripName, editCode, canEd
                 {viewUrl}
               </div>
               <button
+                onClick={() => setShowQrView(!showQrView)}
+                className={`p-3 rounded-xl transition-all ${
+                  showQrView
+                    ? 'bg-slate-200 text-slate-800 border border-slate-300'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+                }`}
+                title="הצג QR Code"
+              >
+                <QrCode className="w-4 h-4" />
+              </button>
+              <button
                 onClick={() => copyToClipboard(viewUrl, false)}
                 className={`flex items-center justify-center gap-2 px-4 py-2 rounded-xl font-medium transition-all ${
                   copiedView 
@@ -114,6 +146,13 @@ export const ShareDialog = ({ isOpen, onClose, tripId, tripName, editCode, canEd
                 <span className="hidden sm:inline">{copiedView ? 'הועתק' : 'העתק'}</span>
               </button>
             </div>
+
+            {showQrView && (
+              <div className="flex justify-center p-4 bg-white rounded-xl border border-slate-100 shadow-sm animate-in fade-in zoom-in-95 duration-200">
+                <QRCode value={viewUrl} size={150} />
+              </div>
+            )}
+
             <p className="text-xs text-slate-400">
               * קישור זה מאפשר צפייה בנתונים בלבד, ללא אפשרות לביצוע שינויים.
             </p>
