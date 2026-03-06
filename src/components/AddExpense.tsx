@@ -403,11 +403,16 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
       return;
     }
 
+    // Construct date with current time
+    const [year, month, day] = date.split('-').map(Number);
+    const now = new Date();
+    const expenseDate = new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds());
+
     const expense: Expense = {
       id: initialExpense?.id || crypto.randomUUID(),
       description: finalDescription,
       amount: finalAmountInTripCurrency,
-      date: new Date(date).toISOString(),
+      date: expenseDate.toISOString(),
       payers: finalPayers,
       splits: finalSplits,
       tag,
