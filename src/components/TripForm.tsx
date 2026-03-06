@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Trip, Participant } from '../types';
+import { Trip, Participant, Category } from '../types';
 import { CURRENCIES } from '../utils/currency';
 import { DEFAULT_CATEGORIES } from '../utils/categories';
-import { X, Plus, ChevronDown, Pencil, Check } from 'lucide-react';
+import { X, Plus, ChevronDown, Pencil, Check, Tags } from 'lucide-react';
 import { CurrencySelect } from './CurrencySelect';
+import { CategoryEditor } from './CategoryEditor';
 
 type Props = {
   initialTrip?: Trip;
@@ -18,10 +19,14 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
   const [participants, setParticipants] = useState<Participant[]>(
     initialTrip?.participants || []
   );
+  const [categories, setCategories] = useState<Category[]>(
+    initialTrip?.categories || DEFAULT_CATEGORIES
+  );
   const [notes, setNotes] = useState(initialTrip?.notes || '');
   const [newParticipantName, setNewParticipantName] = useState('');
   const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
 
   // If initialTrip changes (e.g. when switching trips), update state
   useEffect(() => {
@@ -30,6 +35,7 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
       setBaseCurrency(initialTrip.baseCurrency);
       setTripCurrency(initialTrip.tripCurrency);
       setParticipants(initialTrip.participants);
+      setCategories(initialTrip.categories);
       setNotes(initialTrip.notes || '');
     }
   }, [initialTrip]);
@@ -88,7 +94,7 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
       tripCurrency,
       participants,
       expenses: initialTrip?.expenses || [],
-      categories: initialTrip?.categories || DEFAULT_CATEGORIES,
+      categories: categories,
       createdAt: initialTrip?.createdAt || new Date().toISOString(),
       notes: notes.trim()
     };
@@ -96,11 +102,34 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
     onSave(tripData);
   };
 
+  if (showCategoryManager) {
+    return (
+      <CategoryEditor 
+        categories={categories}
+        onSave={(newCategories) => {
+          setCategories(newCategories);
+          setShowCategoryManager(false);
+        }}
+        onClose={() => setShowCategoryManager(false)}
+      />
+    );
+  }
+
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-      <h2 className="text-2xl font-bold text-slate-800 mb-6">
-        {initialTrip ? 'עריכת טיול' : 'יצירת טיול חדש'}
-      </h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-slate-800">
+          {initialTrip ? 'עריכת טיול' : 'יצירת טיול חדש'}
+        </h2>
+        <button 
+          type="button"
+          onClick={() => setShowCategoryManager(true)}
+          className="flex items-center text-indigo-600 bg-indigo-50 p-2 rounded-lg hover:bg-indigo-100 transition-colors"
+          title="ניהול קטגוריות"
+        >
+          <Tags className="w-5 h-5" />
+        </button>
+      </div>
       
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>

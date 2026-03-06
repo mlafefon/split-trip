@@ -262,13 +262,15 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false 
       {/* Summary Card */}
       <div className="bg-gradient-to-br from-indigo-600 to-violet-600 rounded-3xl p-6 text-white shadow-lg relative">
         {!isReadOnly && (
-          <button 
-            onClick={() => setIsEditing(true)}
-            className="absolute top-4 left-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
-            title="ערוך פרטי טיול"
-          >
-            <Pencil className="w-4 h-4 text-white" />
-          </button>
+          <>
+            <button 
+              onClick={() => setIsEditing(true)}
+              className="absolute top-4 left-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+              title="ערוך פרטי טיול"
+            >
+              <Pencil className="w-4 h-4 text-white" />
+            </button>
+          </>
         )}
         
         <div className="text-indigo-100 text-sm mb-1">סה"כ הוצאות בטיול</div>
