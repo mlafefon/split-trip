@@ -36,14 +36,6 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
   const [searchQuery, setSearchQuery] = useState('');
   const [settleDebtData, setSettleDebtData] = useState<{ from: string; to: string; amount: number } | null>(null);
 
-  const participantColors = useMemo(() => {
-    const colors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7', '#ec4899', '#f97316', '#06b6d4'];
-    return trip.participants.reduce((acc, p, index) => {
-      acc[p.id] = colors[index % colors.length];
-      return acc;
-    }, {} as Record<string, string>);
-  }, [trip.participants]);
-
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [activeTab, addMode, editingExpenseId, viewingExpenseId, viewingParticipantId, isEditing]);
@@ -357,7 +349,10 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
                   const payers = expense.payers || 
                     ((expense as any).paidBy ? [{ participantId: (expense as any).paidBy, amount: expense.amount }] : []);
                   
-                  const splits = expense.splits || [];
+                  const payerNames = payers.map(p => trip.participants.find(part => part.id === p.participantId)?.name || 'לא ידוע');
+                  const payerText = payerNames.length > 1 
+                    ? `${payerNames.length} משתתפים` 
+                    : payerNames[0] || 'לא ידוע';
 
                   const category = trip.categories.find(c => c.name === expense.tag);
                   let Icon = category ? ICON_MAP[category.icon] : null;
@@ -368,94 +363,42 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
                     iconColor = '#f97316'; // orange-500
                   }
 
-                  const isSplitEveryone = splits.length === trip.participants.length;
-
                   return (
                     <div 
                       key={expense.id} 
                       onClick={() => setViewingExpenseId(expense.id)}
-                      className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 cursor-pointer hover:bg-slate-50 transition-colors"
+                      className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition-colors"
                     >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <div className="font-bold text-slate-800">{expense.description}</div>
-                          <div className="text-xs text-slate-500 mt-1 flex items-center gap-2 flex-wrap">
-                            <span className="bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1">
-                              {Icon && <Icon className="w-3 h-3" style={{ color: iconColor }} />}
-                              {expense.tag}
-                            </span>
-                            <div className="flex items-center gap-1">
-                              <span>שולם ע"י</span>
-                              {payers.map((payer, idx) => (
-                                <span key={payer.participantId} className="flex items-center">
-                                  {idx > 0 && <span className="mr-1">,</span>}
-                                  <div 
-                                    className="w-2 h-2 rounded-full mr-1" 
-                                    style={{ backgroundColor: participantColors[payer.participantId] }}
-                                  />
-                                  <span>{trip.participants.find(p => p.id === payer.participantId)?.name}</span>
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center gap-3 pl-2">
-                          <div className="text-left" dir="ltr">
-                            {expense.originalCurrency && expense.originalCurrency !== trip.tripCurrency && expense.exchangeRate ? (
-                              <>
-                                <div className="font-bold text-slate-800">
-                                  {formatAmount(expense.amount / expense.exchangeRate)} {expense.originalCurrency}
-                                </div>
-                                <div className="text-[10px] text-slate-400 font-medium">
-                                  {formatAmount(expense.amount)} {trip.tripCurrency}
-                                </div>
-                              </>
-                            ) : (
-                              <div className="font-bold text-slate-800">{formatAmount(expense.amount)} {trip.tripCurrency}</div>
-                            )}
-                            <div className="text-xs text-slate-400 text-right" dir="rtl">
-                              {new Date(expense.date).toLocaleDateString('en-GB')}
-                            </div>
-                          </div>
-                          <ChevronLeft className="w-5 h-5 text-slate-300" />
+                      <div>
+                        <div className="font-bold text-slate-800">{expense.description}</div>
+                        <div className="text-xs text-slate-500 mt-1 flex items-center gap-2">
+                          <span className="bg-slate-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                            {Icon && <Icon className="w-3 h-3" style={{ color: iconColor }} />}
+                            {expense.tag}
+                          </span>
+                          <span>שולם ע"י {payerText}</span>
                         </div>
                       </div>
-
-                      {/* Split Bar */}
-                      {splits.length > 0 && (
-                        <div className="mt-3">
-                          <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-slate-100">
-                            {splits.map(split => (
-                              <div 
-                                key={split.participantId}
-                                style={{ 
-                                  width: `${(split.amount / expense.amount) * 100}%`,
-                                  backgroundColor: participantColors[split.participantId]
-                                }}
-                              />
-                            ))}
-                          </div>
-                          <div className="flex items-center gap-2 mt-1.5 overflow-x-auto no-scrollbar">
-                             <span className="text-[10px] text-slate-400 whitespace-nowrap">עבור:</span>
-                             {isSplitEveryone ? (
-                               <span className="text-[10px] text-slate-500">כולם</span>
-                             ) : (
-                               splits.map(split => (
-                                 <div key={split.participantId} className="flex items-center gap-1 shrink-0">
-                                   <div 
-                                     className="w-1.5 h-1.5 rounded-full" 
-                                     style={{ backgroundColor: participantColors[split.participantId] }}
-                                   />
-                                   <span className="text-[10px] text-slate-500">
-                                     {trip.participants.find(p => p.id === split.participantId)?.name}
-                                   </span>
-                                 </div>
-                               ))
-                             )}
+                      <div className="flex items-center gap-3 pl-2">
+                        <div className="text-left" dir="ltr">
+                          {expense.originalCurrency && expense.originalCurrency !== trip.tripCurrency && expense.exchangeRate ? (
+                            <>
+                              <div className="font-bold text-slate-800">
+                                {formatAmount(expense.amount / expense.exchangeRate)} {expense.originalCurrency}
+                              </div>
+                              <div className="text-[10px] text-slate-400 font-medium">
+                                {formatAmount(expense.amount)} {trip.tripCurrency}
+                              </div>
+                            </>
+                          ) : (
+                            <div className="font-bold text-slate-800">{formatAmount(expense.amount)} {trip.tripCurrency}</div>
+                          )}
+                          <div className="text-xs text-slate-400 text-right" dir="rtl">
+                            {new Date(expense.date).toLocaleDateString('en-GB')}
                           </div>
                         </div>
-                      )}
+                        <ChevronLeft className="w-5 h-5 text-slate-300" />
+                      </div>
                     </div>
                   );
                 })}

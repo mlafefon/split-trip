@@ -2,6 +2,7 @@ import { Trip, Expense } from '../types';
 import { formatAmount } from '../utils/currency';
 import { calculateBalances, calculateSettlement } from '../utils/settlement';
 import { useEffect } from 'react';
+import { Download } from 'lucide-react';
 import metadata from '../../metadata.json';
 
 type Props = {
@@ -11,8 +12,6 @@ type Props = {
 export const ExportReport = ({ trip }: Props) => {
   useEffect(() => {
     document.title = `Export - ${trip.destination}`;
-    // Auto-print when loaded? Maybe not, let the user decide.
-    // window.print();
   }, [trip.destination]);
 
   const balances = calculateBalances(trip);
@@ -58,39 +57,34 @@ export const ExportReport = ({ trip }: Props) => {
         }
       `}</style>
 
-      <div className="mb-8">
-        <h1 className="text-3xl font-normal mb-1 text-black">
-          {trip.destination} — {getHebrewDate(trip.createdAt)}
-        </h1>
-        <div className="text-sm text-slate-500">
-          נוצר על ידי splt-trip v{metadata.version}
+      <div className="mb-8 flex flex-col sm:flex-row justify-between items-start gap-4">
+        <div>
+          <h1 className="text-3xl font-normal mb-1 text-black">
+            {trip.destination} — {getHebrewDate(trip.createdAt)}
+          </h1>
+          <div className="text-sm text-slate-500">
+            נוצר על ידי splt-trip v{metadata.version}
+          </div>
         </div>
+        <button 
+          onClick={() => window.print()}
+          className="print:hidden bg-indigo-600 text-white px-4 py-2 rounded-xl shadow-sm hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2 font-medium w-full sm:w-auto"
+        >
+          <Download className="w-4 h-4" /> הורד כ-PDF / הדפס
+        </button>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="border-b border-slate-200">
-              <th className="py-2 px-2 text-right font-medium text-slate-900 w-[20%]">תיאור</th>
-              <th className="py-2 px-2 text-right font-medium text-slate-900 w-[10%]">סכום</th>
-              <th className="py-2 px-2 text-right font-medium text-slate-900 w-[10%]">שולם ע"י</th>
-              <th className="py-2 px-2 text-right font-medium text-slate-900 w-[8%]">תאריך</th>
-              {trip.participants.map(p => (
-                <th key={p.id} className="py-2 px-2 text-center font-medium text-slate-900 bg-orange-50/50 min-w-[80px]">
-                  {p.name}
-                </th>
-              ))}
+              <th className="py-2 px-2 text-right font-medium text-slate-900 w-[50%]">תיאור</th>
+              <th className="py-2 px-2 text-right font-medium text-slate-900 w-[25%]">סכום</th>
+              <th className="py-2 px-2 text-right font-medium text-slate-900 w-[25%]">תאריך</th>
             </tr>
           </thead>
           <tbody>
             {sortedExpenses.map((expense) => {
-              const payerNames = expense.payers
-                .map(payer => trip.participants.find(p => p.id === payer.participantId)?.name)
-                .filter(Boolean)
-                .join(', ');
-              
-              const isTransfer = expense.tag === 'העברה';
-              
               return (
                 <tr key={expense.id} className="border-b border-slate-100 hover:bg-slate-50">
                   <td className="py-3 px-2 text-slate-800 font-medium">{expense.description}</td>
@@ -101,48 +95,10 @@ export const ExportReport = ({ trip }: Props) => {
                       <span>{formatAmount(expense.amount)} {getCurrencySymbol(trip.tripCurrency)}</span>
                     )}
                   </td>
-                  <td className="py-3 px-2 text-slate-600">{payerNames}</td>
-                  <td className="py-3 px-2 text-slate-500 text-center">{formatDate(expense.date)}</td>
-                  
-                  {trip.participants.map(p => {
-                    // Check if payer
-                    const payer = expense.payers.find(payer => payer.participantId === p.id);
-                    // Check if split
-                    const split = expense.splits.find(split => split.participantId === p.id);
-                    
-                    return (
-                      <td key={p.id} className="py-3 px-2 text-center bg-orange-50/30">
-                        <div className="flex justify-center gap-3">
-                          {payer && (
-                            <span className="text-green-600 font-medium">
-                              {formatAmount(payer.amount)}
-                            </span>
-                          )}
-                          {split && (
-                            <span className="text-red-500">
-                              -{formatAmount(split.amount)}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                    );
-                  })}
+                  <td className="py-3 px-2 text-slate-500">{formatDate(expense.date)}</td>
                 </tr>
               );
             })}
-            
-            {/* Totals Row */}
-            <tr className="font-bold bg-orange-50/50 border-t-2 border-orange-100">
-              <td colSpan={4} className="py-4 px-2 text-right"></td>
-              {trip.participants.map(p => {
-                const balance = balances[p.id] || 0;
-                return (
-                  <td key={p.id} className="py-4 px-2 text-center whitespace-nowrap">
-                    <span dir="ltr">{formatAmount(balance)} {getCurrencySymbol(trip.tripCurrency)}</span>
-                  </td>
-                );
-              })}
-            </tr>
           </tbody>
         </table>
       </div>
