@@ -70,7 +70,7 @@ export const CurrencySelect = ({ value, onChange, label, className = '', short =
             fixed top-24 inset-x-4 max-h-[60vh]
             
             /* Desktop: Absolute Dropdown */
-            md:absolute md:top-full md:mt-2 md:max-h-60 md:inset-auto
+            md:absolute md:top-full md:mt-2 md:max-h-[350px] md:inset-auto
             
             ${short ? `md:${alignmentClass} md:w-64 md:max-w-[90vw]` : 'md:w-full md:left-0'}
           `}>
@@ -110,10 +110,21 @@ export const CurrencySelect = ({ value, onChange, label, className = '', short =
                       setIsOpen(false);
                       setSearchQuery('');
                     }}
-                    className={`w-full text-right px-4 py-3 text-sm hover:bg-slate-50 transition-colors flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 ${value === c.code ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700'}`}
+                    className={`w-full text-right px-4 py-2 text-sm hover:bg-slate-50 transition-colors flex items-center justify-between gap-2 border-b border-slate-50 last:border-0 ${value === c.code ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700'}`}
                   >
                     <span className="truncate">{c.name}</span>
-                    <span className="font-mono opacity-60 text-xs bg-slate-100 px-1.5 py-0.5 rounded flex-shrink-0">{c.code}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <img
+                        src={`https://flagcdn.com/w40/${c.countryCode}.png`}
+                        srcSet={`https://flagcdn.com/w80/${c.countryCode}.png 2x`}
+                        width="24"
+                        height="18"
+                        alt={c.countryCode}
+                        className="rounded-sm object-cover shadow-sm border border-black/5"
+                        referrerPolicy="no-referrer"
+                      />
+                      <span className="font-mono opacity-60 text-xs bg-slate-100 px-1.5 py-0.5 rounded">{c.code}</span>
+                    </div>
                   </button>
                 ))
               )}
