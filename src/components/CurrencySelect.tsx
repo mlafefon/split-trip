@@ -67,12 +67,12 @@ export const CurrencySelect = ({ value, onChange, label, className = '', short =
             animate-in fade-in zoom-in-95 duration-200
             
             /* Mobile: Fixed Modal */
-            fixed top-24 inset-x-4 max-h-[40vh]
+            fixed top-24 inset-x-4 max-h-[60vh]
             
             /* Desktop: Absolute Dropdown */
-            md:absolute md:top-full md:mt-2 md:max-h-60 md:static md:inset-auto
+            md:absolute md:top-full md:mt-2 md:max-h-60 md:inset-auto
             
-            ${short ? `md:${alignmentClass} md:w-64 md:max-w-[90vw]` : 'md:w-full'}
+            ${short ? `md:${alignmentClass} md:w-64 md:max-w-[90vw]` : 'md:w-full md:left-0'}
           `}>
             <div className="p-2 border-b border-slate-100 sticky top-0 bg-white z-10">
               <div className="relative">
