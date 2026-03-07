@@ -204,7 +204,9 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-2">
-            <span className="text-[10px] text-white/50 font-mono" dir="ltr">v{metadata.version}</span>
+            {!activeTrip && !isCreating && (
+              <span className="text-[10px] text-white/50 font-mono" dir="ltr">v{metadata.version}</span>
+            )}
             {activeTrip && !isCreating && activeTripCanEdit && !isEditingTrip && (
               <button 
                 onClick={() => setIsEditingTrip(true)}
