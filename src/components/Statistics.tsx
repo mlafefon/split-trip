@@ -1,6 +1,6 @@
 import { Trip } from '../types';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
-import { Download } from 'lucide-react';
+import { Download, Printer } from 'lucide-react';
 import { ICON_MAP } from '../utils/categories';
 import { formatAmount } from '../utils/currency';
 
@@ -124,7 +124,19 @@ export const Statistics = ({ trip }: Props) => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => {
+            const url = new URL(window.location.href);
+            url.searchParams.set('trip', trip.id);
+            url.searchParams.set('view', 'export');
+            window.open(url.toString(), '_blank');
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 transition-colors text-sm font-medium"
+        >
+          <Printer className="w-4 h-4" />
+          הדפסת דוח
+        </button>
         <button
           onClick={exportToCSV}
           className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 transition-colors text-sm font-medium"
