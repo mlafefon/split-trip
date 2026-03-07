@@ -1,5 +1,6 @@
 import { Trip } from '../types';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
+import { Download, Printer } from 'lucide-react';
 import { ICON_MAP } from '../utils/categories';
 import { formatAmount } from '../utils/currency';
 
@@ -65,6 +66,54 @@ export const Statistics = ({ trip }: Props) => {
     };
   }).filter(d => d.value > 0);
 
+  const exportToCSV = () => {
+    // BOM for Hebrew support in Excel
+    const BOM = "\uFEFF";
+    const headers = ['תאריך', 'תיאור', 'קטגוריה', 'סכום מקורי', 'מטבע מקורי', 'שער', 'סכום בטיול', 'שולם ע"י', 'עבור', 'הערות'];
+    
+    const rows = trip.expenses.map(e => {
+      const dateObj = new Date(e.date);
+      const day = dateObj.getDate().toString().padStart(2, '0');
+      const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+      const year = dateObj.getFullYear();
+      const date = `${day}/${month}/${year}`;
+      const payers = e.payers.map(p => {
+        const name = trip.participants.find(part => part.id === p.participantId)?.name || 'Unknown';
+        return `${name} (${formatAmount(p.amount)})`;
+      }).join(', ');
+      
+      const beneficiaries = e.splits.map(s => {
+        const name = trip.participants.find(part => part.id === s.participantId)?.name || 'Unknown';
+        return `${name} (${formatAmount(s.amount)})`;
+      }).join(', ');
+
+      const originalAmount = e.amount / (e.exchangeRate || 1);
+
+      return [
+        date,
+        `"${e.description.replace(/"/g, '""')}"`,
+        e.tag,
+        formatAmount(originalAmount),
+        e.originalCurrency,
+        e.exchangeRate,
+        formatAmount(e.amount),
+        `"${payers}"`,
+        `"${beneficiaries}"`,
+        `"${(e.notes || '').replace(/"/g, '""')}"`
+      ].join(',');
+    });
+
+    const csvContent = BOM + headers.join(',') + '\n' + rows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `trip_expenses_${trip.id}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (totalCategoryExpenses === 0 && totalExpenses === 0) {
     return (
       <div className="text-center py-12 text-slate-400">
@@ -75,6 +124,28 @@ export const Statistics = ({ trip }: Props) => {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => {
+            const url = new URL(window.location.href);
+            url.searchParams.set('trip', trip.id);
+            url.searchParams.set('view', 'export');
+            window.open(url.toString(), '_blank');
+          }}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 transition-colors text-sm font-medium"
+        >
+          <Printer className="w-4 h-4" />
+          הדפסת דוח
+        </button>
+        <button
+          onClick={exportToCSV}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl hover:bg-indigo-100 transition-colors text-sm font-medium"
+        >
+          <Download className="w-4 h-4" />
+          ייצוא ל-CSV
+        </button>
+      </div>
+
       {totalCategoryExpenses > 0 && (
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
           <h3 className="text-lg font-bold text-slate-800 mb-2 text-center">הוצאות לפי קטגוריה</h3>

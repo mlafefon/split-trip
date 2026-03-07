@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Trip, Expense, Category } from '../types';
 import { AddExpense } from './AddExpense';
 import { TripForm } from './TripForm';

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Trip, Participant, Category } from '../types';
-import { CURRENCIES } from '../utils/currency';
+import { CURRENCIES, fetchExchangeRates } from '../utils/currency';
 import { DEFAULT_CATEGORIES } from '../utils/categories';
-import { X, Plus, ChevronDown, Pencil, Check, Tags } from 'lucide-react';
+import { X, Plus, ChevronDown, Pencil, Check, Tags, Loader2 } from 'lucide-react';
 import { CurrencySelect } from './CurrencySelect';
 import { CategoryEditor } from './CategoryEditor';
+import { ConfirmDialog } from './ConfirmDialog';
 
 type Props = {
   initialTrip?: Trip;
@@ -27,6 +28,8 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
   const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [showCategoryManager, setShowCategoryManager] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showCurrencyConfirm, setShowCurrencyConfirm] = useState(false);
 
   // If initialTrip changes (e.g. when switching trips), update state
   useEffect(() => {
@@ -87,13 +90,91 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
     e.preventDefault();
     if (!destination.trim() || participants.length === 0) return;
 
+    // Check if trip currency changed and we have expenses
+    if (initialTrip && tripCurrency !== initialTrip.tripCurrency && initialTrip.expenses.length > 0) {
+      setShowCurrencyConfirm(true);
+      return;
+    }
+
+    // Otherwise save directly
+    saveTrip(false);
+  };
+
+  const saveTrip = async (shouldUpdateExpenses: boolean) => {
+    let updatedExpenses = initialTrip?.expenses || [];
+
+    if (shouldUpdateExpenses && initialTrip) {
+      setIsProcessing(true);
+      try {
+        // Group expenses by original currency to minimize API calls
+        const currencies = new Set<string>();
+        updatedExpenses.forEach(e => {
+          currencies.add(e.originalCurrency || initialTrip.tripCurrency);
+        });
+
+        const ratesMap: Record<string, Record<string, number>> = {};
+        
+        // Fetch rates for all source currencies
+        await Promise.all(Array.from(currencies).map(async (currency) => {
+          if (currency === tripCurrency) return; // No need if same
+          const rates = await fetchExchangeRates(currency);
+          if (rates) {
+            ratesMap[currency] = rates;
+          }
+        }));
+
+        updatedExpenses = updatedExpenses.map(e => {
+          const sourceCurrency = e.originalCurrency || initialTrip.tripCurrency;
+          
+          // If source is same as new target, rate is 1
+          if (sourceCurrency === tripCurrency) {
+             const originalAmount = e.amount / (e.exchangeRate || 1);
+             return {
+               ...e,
+               amount: originalAmount,
+               exchangeRate: 1,
+               originalCurrency: sourceCurrency,
+               payers: e.payers.map(p => ({ ...p, amount: (p.amount / e.amount) * originalAmount })),
+               splits: e.splits.map(s => ({ ...s, amount: (s.amount / e.amount) * originalAmount }))
+             };
+          }
+
+          const rates = ratesMap[sourceCurrency];
+          if (!rates || !rates[tripCurrency]) {
+            console.warn(`Could not find rate for ${sourceCurrency} to ${tripCurrency}`);
+            return e; // Keep as is if rate not found
+          }
+
+          const newRate = rates[tripCurrency];
+          const originalAmount = e.amount / (e.exchangeRate || 1);
+          const newAmount = originalAmount * newRate;
+          const ratio = newAmount / e.amount;
+
+          return {
+            ...e,
+            amount: newAmount,
+            exchangeRate: newRate,
+            originalCurrency: sourceCurrency, // Ensure it's set
+            payers: e.payers.map(p => ({ ...p, amount: p.amount * ratio })),
+            splits: e.splits.map(s => ({ ...s, amount: s.amount * ratio }))
+          };
+        });
+
+      } catch (error) {
+        console.error('Failed to update expenses currency', error);
+        alert('אירעה שגיאה בעדכון שערי המטבע. הטיול יישמר עם המטבע החדש אך ההוצאות לא עודכנו.');
+      } finally {
+        setIsProcessing(false);
+      }
+    }
+
     const tripData: Trip = {
       id: initialTrip?.id || crypto.randomUUID(),
       destination: destination.trim(),
       baseCurrency,
       tripCurrency,
       participants,
-      expenses: initialTrip?.expenses || [],
+      expenses: updatedExpenses,
       categories: categories,
       createdAt: initialTrip?.createdAt || new Date().toISOString(),
       notes: notes.trim()
@@ -116,7 +197,27 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
   }
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative">
+      <ConfirmDialog 
+        isOpen={showCurrencyConfirm}
+        title="שינוי מטבע טיול"
+        message={`שינוי מטבע הטיול מ-${initialTrip?.tripCurrency} ל-${tripCurrency} יעדכן את כל ההוצאות הקיימות לפי שערים עדכניים. האם להמשיך?`}
+        confirmText="עדכן הוצאות"
+        cancelText="ביטול"
+        isDestructive={false}
+        onConfirm={() => {
+          setShowCurrencyConfirm(false);
+          saveTrip(true);
+        }}
+        onCancel={() => setShowCurrencyConfirm(false)}
+      />
+
+      {isProcessing && (
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center rounded-2xl">
+          <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-2" />
+          <p className="text-slate-600 font-medium">מעדכן שערי מטבע...</p>
+        </div>
+      )}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-slate-800">
           {initialTrip ? 'עריכת טיול' : 'יצירת טיול חדש'}
@@ -252,14 +353,16 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
         <div className="flex gap-3 pt-4">
           <button 
             type="submit"
-            className="flex-1 bg-indigo-600 text-white p-3 rounded-xl font-medium hover:bg-indigo-700 transition-colors"
+            disabled={isProcessing}
+            className="flex-1 bg-indigo-600 text-white p-3 rounded-xl font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50"
           >
             {initialTrip ? 'עדכן טיול' : 'שמור טיול'}
           </button>
           <button 
             type="button"
             onClick={onCancel}
-            className="flex-1 bg-slate-100 text-slate-700 p-3 rounded-xl font-medium hover:bg-slate-200 transition-colors"
+            disabled={isProcessing}
+            className="flex-1 bg-slate-100 text-slate-700 p-3 rounded-xl font-medium hover:bg-slate-200 transition-colors disabled:opacity-50"
           >
             ביטול
           </button>

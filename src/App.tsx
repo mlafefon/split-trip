@@ -6,11 +6,15 @@ import { useFirebaseTrips } from './hooks/useFirebaseTrips';
 import { ChevronRight, Loader2, Share2, Pencil } from 'lucide-react';
 import { ShareDialog } from './components/ShareDialog';
 import { InstallPrompt } from './components/InstallPrompt';
+import metadata from '../metadata.json';
+
+import { ExportReport } from './components/ExportReport';
 
 export default function App() {
   // Check for trip ID in URL query params
   const [urlTripId, setUrlTripId] = useState<string | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const [isExportView, setIsExportView] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [isEditingTrip, setIsEditingTrip] = useState(false);
 
@@ -23,6 +27,9 @@ export default function App() {
       setUrlTripId(id);
       if (view === 'readonly') {
         setIsReadOnly(true);
+      }
+      if (view === 'export') {
+        setIsExportView(true);
       }
     }
   }, []);
@@ -161,6 +168,10 @@ export default function App() {
     );
   }
 
+  if (isExportView && activeTrip) {
+    return <ExportReport trip={activeTrip} />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-24" dir="rtl">
       <header className="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-20">
@@ -193,6 +204,9 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-2">
+            {!activeTrip && !isCreating && (
+              <span className="text-[10px] text-white/50 font-mono" dir="ltr">v{metadata.version}</span>
+            )}
             {activeTrip && !isCreating && activeTripCanEdit && !isEditingTrip && (
               <button 
                 onClick={() => setIsEditingTrip(true)}

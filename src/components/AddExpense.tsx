@@ -80,7 +80,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
   const [multiPayers, setMultiPayers] = useState<Record<string, string>>({});
 
   // Split state
-  const [splitMode, setSplitMode] = useState<'EXACT' | 'PERCENTAGE'>('EXACT');
+  const [splitMode, setSplitMode] = useState<'EXACT' | 'PERCENTAGE' | 'SHARES'>('EXACT');
   const [selectedBeneficiaries, setSelectedBeneficiaries] = useState<string[]>(
     initialExpense?.splits.map(s => s.participantId) || 
     (initialData?.splits?.map(s => s.participantId) || 
@@ -203,8 +203,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
         if (index === 0) val = Number((val + remainder).toFixed(2));
         newSplits[id] = formatAmount(val);
       });
-    } else {
-      // PERCENTAGE
+    } else if (splitMode === 'PERCENTAGE') {
       const basePercent = Math.floor((100 / count) * 100) / 100;
       const remainder = Number((100 - (basePercent * count)).toFixed(2));
       
@@ -212,6 +211,10 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
         let val = basePercent;
         if (index === 0) val = Number((val + remainder).toFixed(2));
         newSplits[id] = formatAmount(val);
+      });
+    } else if (splitMode === 'SHARES') {
+      selectedBeneficiaries.forEach((id) => {
+        newSplits[id] = '1';
       });
     }
     setSplitValues(newSplits);
@@ -225,6 +228,11 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
   const handleSplitChange = (id: string, value: string) => {
     // 1. Update the changed value
     const newSplits = { ...splitValues, [id]: value };
+    
+    if (splitMode === 'SHARES') {
+      setSplitValues(newSplits);
+      return;
+    }
     
     // 2. Update manual locks
     let newManuals = [...manualSplitIds];
@@ -261,6 +269,13 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
       // Clear value
       const newSplits = { ...splitValues, [id]: '' };
       
+      if (splitMode === 'SHARES') {
+        setManualSplitIds(newManuals);
+        setSelectedBeneficiaries(newSelected);
+        setSplitValues(newSplits);
+        return;
+      }
+      
       // If we removed a manual user, we might need to redistribute?
       // Actually, we should always redistribute among remaining autos.
       // If no autos left (all remaining are manual), unlock one.
@@ -281,6 +296,12 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
       // Adding
       newSelected = [...selectedBeneficiaries, id];
       setSelectedBeneficiaries(newSelected);
+      
+      if (splitMode === 'SHARES') {
+        setSplitValues({ ...splitValues, [id]: '1' });
+        return;
+      }
+      
       // New person is auto (not in manuals)
       // Just redistribute
       const total = splitMode === 'EXACT' ? parseFloat(amount || '0') : 100;
@@ -290,36 +311,82 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
   };
 
   // When switching modes, convert values
-  const handleModeChange = (newMode: 'EXACT' | 'PERCENTAGE') => {
+  const handleModeChange = (newMode: 'EXACT' | 'PERCENTAGE' | 'SHARES') => {
     const total = parseFloat(amount);
     if (isNaN(total) || total <= 0) {
       setSplitMode(newMode);
-      setSplitValues({}); // Clear if no amount
+      if (newMode === 'SHARES') {
+         const newValues: Record<string, string> = {};
+         trip.participants.forEach(p => {
+           newValues[p.id] = selectedBeneficiaries.includes(p.id) ? '1' : '0';
+         });
+         setSplitValues(newValues);
+      } else {
+         setSplitValues({}); // Clear if no amount
+      }
       return;
     }
 
     const newValues: Record<string, string> = {};
     
     if (newMode === 'PERCENTAGE') {
-      // EXACT -> PERCENTAGE
+      if (splitMode === 'EXACT') {
+        Object.entries(splitValues).forEach(([id, val]) => {
+          const numVal = parseFloat(val as string);
+          if (!isNaN(numVal)) {
+            newValues[id] = formatAmount((numVal / total) * 100);
+          } else {
+            newValues[id] = '0';
+          }
+        });
+      } else if (splitMode === 'SHARES') {
+        const totalShares = Object.values(splitValues).reduce((sum, val) => sum + (parseFloat(val as string) || 0), 0);
+        Object.entries(splitValues).forEach(([id, val]) => {
+          const numVal = parseFloat(val as string);
+          if (!isNaN(numVal) && totalShares > 0) {
+            newValues[id] = formatAmount((numVal / totalShares) * 100);
+          } else {
+            newValues[id] = '0';
+          }
+        });
+      }
+    } else if (newMode === 'EXACT') {
+      if (splitMode === 'PERCENTAGE') {
+        Object.entries(splitValues).forEach(([id, val]) => {
+          const numVal = parseFloat(val as string);
+          if (!isNaN(numVal)) {
+            newValues[id] = formatAmount((numVal / 100) * total);
+          } else {
+            newValues[id] = '0';
+          }
+        });
+      } else if (splitMode === 'SHARES') {
+        const totalShares = Object.values(splitValues).reduce((sum, val) => sum + (parseFloat(val as string) || 0), 0);
+        Object.entries(splitValues).forEach(([id, val]) => {
+          const numVal = parseFloat(val as string);
+          if (!isNaN(numVal) && totalShares > 0) {
+            newValues[id] = formatAmount((numVal / totalShares) * total);
+          } else {
+            newValues[id] = '0';
+          }
+        });
+      }
+    } else if (newMode === 'SHARES') {
       Object.entries(splitValues).forEach(([id, val]) => {
         const numVal = parseFloat(val as string);
-        if (!isNaN(numVal)) {
-          newValues[id] = formatAmount((numVal / total) * 100);
+        if (!isNaN(numVal) && numVal > 0) {
+          newValues[id] = formatAmount(numVal);
         } else {
           newValues[id] = '0';
         }
       });
-    } else {
-      // PERCENTAGE -> EXACT
-      Object.entries(splitValues).forEach(([id, val]) => {
-        const numVal = parseFloat(val as string);
-        if (!isNaN(numVal)) {
-          newValues[id] = formatAmount((numVal / 100) * total);
-        } else {
-          newValues[id] = '0';
-        }
-      });
+      
+      const vals = Object.values(newValues).filter(v => parseFloat(v) > 0);
+      if (vals.length > 0 && vals.every(v => v === vals[0])) {
+         Object.keys(newValues).forEach(id => {
+            if (parseFloat(newValues[id]) > 0) newValues[id] = '1';
+         });
+      }
     }
     
     setSplitValues(newValues);
@@ -334,12 +401,14 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
     const numAmount = parseFloat(amount);
     const rate = parseFloat(exchangeRate);
 
-    if (!description.trim() || isNaN(numAmount) || numAmount <= 0 || isNaN(rate) || rate <= 0) return;
+    if (isNaN(numAmount) || numAmount <= 0 || isNaN(rate) || rate <= 0) return;
 
     if (!tag) {
       alert('חובה לבחור קטגוריה');
       return;
     }
+
+    const finalDescription = description.trim() || tag;
 
     if (payerMode === 'SINGLE' && !singlePayer) {
       alert('חובה לבחור מי שילם');
@@ -385,27 +454,58 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
     }
 
     let totalSplit = 0;
-    finalSplits = selectedBeneficiaries.map(id => {
-      let val = parseFloat(splitValues[id] || '0');
-      
-      if (splitMode === 'PERCENTAGE') {
-        val = (val / 100) * numAmount;
+    
+    if (splitMode === 'SHARES') {
+      const totalShares = selectedBeneficiaries.reduce((sum, id) => sum + (parseFloat(splitValues[id] || '0')), 0);
+      if (totalShares <= 0) {
+        alert('סך החלקים חייב להיות גדול מ-0');
+        return;
       }
-      
-      totalSplit += val;
-      return { participantId: id, amount: val * rate };
-    });
+      finalSplits = selectedBeneficiaries.map((id, index) => {
+        const shares = parseFloat(splitValues[id] || '0');
+        let val = (shares / totalShares) * numAmount;
+        
+        // Fix rounding issues for the last participant
+        if (index === selectedBeneficiaries.length - 1) {
+          val = numAmount - totalSplit;
+        }
+        
+        totalSplit += val;
+        return { participantId: id, amount: val * rate };
+      });
+    } else {
+      finalSplits = selectedBeneficiaries.map((id, index) => {
+        let val = parseFloat(splitValues[id] || '0');
+        
+        if (splitMode === 'PERCENTAGE') {
+          val = (val / 100) * numAmount;
+        }
+        
+        // Fix rounding issues for the last participant
+        if (index === selectedBeneficiaries.length - 1 && splitMode === 'PERCENTAGE') {
+           val = numAmount - totalSplit;
+        }
+        
+        totalSplit += val;
+        return { participantId: id, amount: val * rate };
+      });
 
-    if (Math.abs(totalSplit - numAmount) > 0.01) {
-      alert(`סכום החלוקה (${totalSplit.toFixed(2)}) לא שווה לסכום ההוצאה (${numAmount})`);
-      return;
+      if (Math.abs(totalSplit - numAmount) > 0.01) {
+        alert(`סכום החלוקה (${totalSplit.toFixed(2)}) לא שווה לסכום ההוצאה (${numAmount})`);
+        return;
+      }
     }
+
+    // Construct date with current time
+    const [year, month, day] = date.split('-').map(Number);
+    const now = new Date();
+    const expenseDate = new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds());
 
     const expense: Expense = {
       id: initialExpense?.id || crypto.randomUUID(),
-      description: description.trim(),
+      description: finalDescription,
       amount: finalAmountInTripCurrency,
-      date: new Date(date).toISOString(),
+      date: expenseDate.toISOString(),
       payers: finalPayers,
       splits: finalSplits,
       tag,
@@ -450,12 +550,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                     <button
                       key={cat.id}
                       type="button"
-                      onClick={() => {
-                        if (!description || description === tag) {
-                          setDescription(cat.name);
-                        }
-                        setTag(cat.name);
-                      }}
+                      onClick={() => setTag(cat.name)}
                       className={`flex flex-col items-center gap-1 p-1 rounded-xl transition-all ${isSelected ? 'scale-110' : 'opacity-70 hover:opacity-100'}`}
                       title={cat.name}
                     >
@@ -487,12 +582,11 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
             <label className="block text-sm font-medium text-slate-700 mb-1">תיאור</label>
             <input 
               type="text" 
-              required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               disabled={isTransfer}
               className={`w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none ${isTransfer ? 'bg-slate-50 text-slate-500' : ''}`}
-              placeholder="לדוגמה: ארוחת ערב, מונית..."
+              placeholder={tag || "לדוגמה: ארוחת ערב, מונית..."}
             />
           </div>
 
@@ -633,10 +727,11 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
               <div className="relative flex-1">
                  <Select
                    value={splitMode}
-                   onChange={(val) => handleModeChange(val as 'EXACT' | 'PERCENTAGE')}
+                   onChange={(val) => handleModeChange(val as 'EXACT' | 'PERCENTAGE' | 'SHARES')}
                    options={[
                      { value: 'EXACT', label: 'סכומים מדויקים' },
-                     { value: 'PERCENTAGE', label: 'חלוקה לפי אחוזים' }
+                     { value: 'PERCENTAGE', label: 'חלוקה לפי אחוזים' },
+                     { value: 'SHARES', label: 'חלוקה לפי חלקים / מניות' }
                    ]}
                  />
               </div>
@@ -659,25 +754,39 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
               const currentVal = parseFloat(splitValues[p.id] || '0');
               
               // Calculate remaining/max
-              const otherSum = Object.entries(splitValues)
-                .filter(([id]) => id !== p.id)
-                .reduce((sum, [, val]) => {
-                  const v = parseFloat(val as string) || 0;
-                  return sum + (v > 0 ? v : 0);
-                }, 0);
-              
-              const totalTarget = splitMode === 'EXACT' ? parseFloat(amount || '0') : 100;
-              const maxAllowed = Math.max(0, totalTarget - otherSum);
-              const isOverLimit = currentVal > maxAllowed + 0.01;
+              let isOverLimit = false;
+              if (splitMode !== 'SHARES') {
+                const otherSum = Object.entries(splitValues)
+                  .filter(([id]) => id !== p.id)
+                  .reduce((sum, [, val]) => {
+                    const v = parseFloat(val as string) || 0;
+                    return sum + (v > 0 ? v : 0);
+                  }, 0);
+                
+                const totalTarget = splitMode === 'EXACT' ? parseFloat(amount || '0') : 100;
+                const maxAllowed = Math.max(0, totalTarget - otherSum);
+                isOverLimit = currentVal > maxAllowed + 0.01;
+              }
 
-              // Determine split amount text for percentage mode
+              // Determine split amount text
               let splitAmountText = '';
-              if (splitMode === 'PERCENTAGE' && isSelected) {
-                 const pct = parseFloat(splitValues[p.id] || '0');
+              if (isSelected) {
                  const total = parseFloat(amount || '0');
-                 if (!isNaN(pct) && !isNaN(total)) {
-                    const val = (pct / 100) * total;
-                    splitAmountText = `(${formatAmount(val)} ${currency})`;
+                 if (splitMode === 'PERCENTAGE') {
+                    const pct = parseFloat(splitValues[p.id] || '0');
+                    if (!isNaN(pct) && !isNaN(total)) {
+                       const val = (pct / 100) * total;
+                       splitAmountText = `(${formatAmount(val)} ${currency})`;
+                    }
+                 } else if (splitMode === 'SHARES') {
+                    const shares = parseFloat(splitValues[p.id] || '0');
+                    const totalShares = Object.entries(splitValues)
+                      .filter(([id]) => selectedBeneficiaries.includes(id))
+                      .reduce((sum, [, val]) => sum + (parseFloat(val as string) || 0), 0);
+                    if (!isNaN(shares) && !isNaN(total) && totalShares > 0) {
+                       const val = (shares / totalShares) * total;
+                       splitAmountText = `(${formatAmount(val)} ${currency})`;
+                    }
                  }
               }
 
@@ -719,7 +828,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                         <input
                           type="number"
                           min="0"
-                          step={splitMode === 'EXACT' ? "0.01" : "0.1"}
+                          step={splitMode === 'EXACT' ? "0.01" : splitMode === 'PERCENTAGE' ? "0.1" : "1"}
                           value={splitValues[p.id] || ''}
                           onChange={(e) => {
                             if (!isSelected) toggleBeneficiary(p.id);
@@ -728,18 +837,18 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                           className={`w-full p-2 pl-12 pr-8 border rounded-lg text-left outline-none transition-colors ${
                             isOverLimit 
                               ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
-                              : isManual
+                              : isManual && splitMode !== 'SHARES'
                                 ? 'border-amber-200 bg-amber-50 focus:border-amber-400 focus:ring-1 focus:ring-amber-400'
                                 : 'border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
                           }`}
                           dir="ltr"
-                          placeholder="0.00"
+                          placeholder="0"
                           disabled={!isSelected}
                         />
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-                          {splitMode === 'EXACT' ? currency : '%'}
+                          {splitMode === 'EXACT' ? currency : splitMode === 'PERCENTAGE' ? '%' : 'חלקים'}
                         </span>
-                        {isManual && (
+                        {isManual && splitMode !== 'SHARES' && (
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-400 pointer-events-none" title="סכום קבוע ידנית">
                             <Lock className="w-3 h-3" />
                           </span>
@@ -753,7 +862,11 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
             
             {!isTransfer && (
               <div className="text-xs text-slate-500 text-left mt-2 pt-2 border-t border-slate-200" dir="ltr">
-                סה"כ: {formatAmount(Object.values(splitValues).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0))} / {splitMode === 'EXACT' ? (amount || '0.00') : '100%'}
+                {splitMode === 'SHARES' ? (
+                  `סה"כ חלקים: ${formatAmount(Object.values(splitValues).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0))}`
+                ) : (
+                  `סה"כ: ${formatAmount(Object.values(splitValues).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0))} / ${splitMode === 'EXACT' ? (amount || '0.00') : '100%'}`
+                )}
               </div>
             )}
           </div>
