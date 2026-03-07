@@ -6,6 +6,7 @@ import { useFirebaseTrips } from './hooks/useFirebaseTrips';
 import { ChevronRight, Loader2, Share2, Pencil } from 'lucide-react';
 import { ShareDialog } from './components/ShareDialog';
 import { InstallPrompt } from './components/InstallPrompt';
+import metadata from '../metadata.json';
 
 export default function App() {
   // Check for trip ID in URL query params
@@ -193,6 +194,9 @@ export default function App() {
           </div>
           
           <div className="flex items-center gap-2">
+            {!activeTrip && !isCreating && (
+              <span className="text-[10px] text-white/50 font-mono" dir="ltr">v{metadata.version}</span>
+            )}
             {activeTrip && !isCreating && activeTripCanEdit && !isEditingTrip && (
               <button 
                 onClick={() => setIsEditingTrip(true)}
