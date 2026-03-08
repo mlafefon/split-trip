@@ -197,7 +197,7 @@ export const Statistics = ({ trip }: Props) => {
         </div>
       )}
 
-      {totalExpenses > 0 && (
+      {totalExpenses > 0 && trip.participants.length > 1 && (
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
           <h3 className="text-lg font-bold text-slate-800 mb-2 text-center">הוצאות לפי משתתף</h3>
           <div className="h-[220px] w-full" dir="ltr">
