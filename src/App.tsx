@@ -281,10 +281,12 @@ export default function App() {
                       onClick={() => { 
                         setIsMenuOpen(false); 
                         archiveTrip(activeTrip.id);
+                        // Force full reset to home
                         if (backHandler) setBackHandler(null);
                         window.history.pushState({}, '', window.location.pathname);
                         setUrlTripId(null);
                         setCurrentTripId(null);
+                        setIsCreating(false);
                       }}
                       className="w-full text-right px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm"
                     >
