@@ -179,7 +179,11 @@ export default function App() {
   };
 
   const handleBack = () => {
-    window.history.back();
+    if (isCreating) {
+      setIsCreating(false);
+    } else {
+      window.history.back();
+    }
   };
 
   const handleSetBackHandler = useCallback((handler: (() => boolean) | null) => {
@@ -230,12 +234,7 @@ export default function App() {
               className={`text-xl font-bold truncate max-w-[200px] ${activeTrip || isCreating ? 'cursor-pointer hover:opacity-80' : ''}`}
               onClick={() => {
                 if (activeTrip || isCreating) {
-                  // Force full reset to home
-                  if (backHandler) setBackHandler(null);
-                  window.history.pushState({}, '', window.location.pathname);
-                  setUrlTripId(null);
-                  setCurrentTripId(null);
-                  setIsCreating(false);
+                  window.location.href = window.location.pathname;
                 }
               }}
             >
@@ -281,12 +280,7 @@ export default function App() {
                       onClick={() => { 
                         setIsMenuOpen(false); 
                         archiveTrip(activeTrip.id);
-                        // Force full reset to home
-                        if (backHandler) setBackHandler(null);
-                        window.history.pushState({}, '', window.location.pathname);
-                        setUrlTripId(null);
-                        setCurrentTripId(null);
-                        setIsCreating(false);
+                        window.location.href = window.location.pathname;
                       }}
                       className="w-full text-right px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm"
                     >
@@ -320,10 +314,7 @@ export default function App() {
             if (activeTrip) {
               deleteTrip(activeTrip.id);
               setShowDeleteConfirm(false);
-              if (backHandler) setBackHandler(null);
-              window.history.pushState({}, '', window.location.pathname);
-              setUrlTripId(null);
-              setCurrentTripId(null);
+              window.location.href = window.location.pathname;
             }
           }}
           onCancel={() => setShowDeleteConfirm(false)}
