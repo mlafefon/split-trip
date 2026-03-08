@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Trip, Participant, Category } from '../types';
 import { CURRENCIES, fetchExchangeRates } from '../utils/currency';
 import { DEFAULT_CATEGORIES } from '../utils/categories';
-import { X, Plus, ChevronDown, Pencil, Check, Tags, Loader2 } from 'lucide-react';
+import { X, Plus, ChevronDown, Pencil, Check, Loader2 } from 'lucide-react';
 import { CurrencySelect } from './CurrencySelect';
-import { CategoryEditor } from './CategoryEditor';
 import { ConfirmDialog } from './ConfirmDialog';
 
 type Props = {
@@ -27,7 +26,6 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
   const [newParticipantName, setNewParticipantName] = useState('');
   const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
-  const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCurrencyConfirm, setShowCurrencyConfirm] = useState(false);
 
@@ -183,19 +181,6 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
     onSave(tripData);
   };
 
-  if (showCategoryManager) {
-    return (
-      <CategoryEditor 
-        categories={categories}
-        onSave={(newCategories) => {
-          setCategories(newCategories);
-          setShowCategoryManager(false);
-        }}
-        onClose={() => setShowCategoryManager(false)}
-      />
-    );
-  }
-
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative">
       <ConfirmDialog 
@@ -222,14 +207,6 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
         <h2 className="text-2xl font-bold text-slate-800">
           {initialTrip ? 'עריכת טיול' : 'יצירת טיול חדש'}
         </h2>
-        <button 
-          type="button"
-          onClick={() => setShowCategoryManager(true)}
-          className="flex items-center text-indigo-600 bg-indigo-50 p-2 rounded-lg hover:bg-indigo-100 transition-colors"
-          title="ניהול קטגוריות"
-        >
-          <Tags className="w-5 h-5" />
-        </button>
       </div>
       
       <form onSubmit={handleSubmit} className="space-y-5">

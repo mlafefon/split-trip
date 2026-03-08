@@ -3,10 +3,11 @@ import { TripList } from './components/TripList';
 import { TripView } from './components/TripView';
 import { TripForm } from './components/TripForm';
 import { useFirebaseTrips } from './hooks/useFirebaseTrips';
-import { ChevronRight, Loader2, Share2, Pencil, WifiOff, MoreVertical, Archive, Trash2 } from 'lucide-react';
+import { ChevronRight, Loader2, Share2, Pencil, WifiOff, MoreVertical, Archive, Trash2, Tags } from 'lucide-react';
 import { ShareDialog } from './components/ShareDialog';
 import { InstallPrompt } from './components/InstallPrompt';
 import { ConfirmDialog } from './components/ConfirmDialog';
+import { CategoryEditor } from './components/CategoryEditor';
 import metadata from '../metadata.json';
 
 import { ExportReport } from './components/ExportReport';
@@ -18,6 +19,7 @@ export default function App() {
   const [isExportView, setIsExportView] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [isEditingTrip, setIsEditingTrip] = useState(false);
+  const [isEditingCategories, setIsEditingCategories] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -179,11 +181,7 @@ export default function App() {
   };
 
   const handleBack = () => {
-    if (isCreating) {
-      setIsCreating(false);
-    } else {
-      window.history.back();
-    }
+    window.history.back();
   };
 
   const handleSetBackHandler = useCallback((handler: (() => boolean) | null) => {
@@ -234,7 +232,12 @@ export default function App() {
               className={`text-xl font-bold truncate max-w-[200px] ${activeTrip || isCreating ? 'cursor-pointer hover:opacity-80' : ''}`}
               onClick={() => {
                 if (activeTrip || isCreating) {
-                  window.location.href = window.location.pathname;
+                  // Force full reset to home
+                  if (backHandler) setBackHandler(null);
+                  window.history.pushState({}, '', window.location.pathname);
+                  setUrlTripId(null);
+                  setCurrentTripId(null);
+                  setIsCreating(false);
                 }
               }}
             >
@@ -267,20 +270,32 @@ export default function App() {
                     </button>
                     
                     {activeTripCanEdit && !isEditingTrip && (
-                      <button 
-                        onClick={() => { setIsMenuOpen(false); setIsEditingTrip(true); }}
-                        className="w-full text-right px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm"
-                      >
-                        <Pencil className="w-4 h-4 text-slate-500" />
-                        עריכת טיול
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => { setIsMenuOpen(false); setIsEditingTrip(true); }}
+                          className="w-full text-right px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm"
+                        >
+                          <Pencil className="w-4 h-4 text-slate-500" />
+                          עריכת טיול
+                        </button>
+                        <button 
+                          onClick={() => { setIsMenuOpen(false); setIsEditingCategories(true); }}
+                          className="w-full text-right px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm"
+                        >
+                          <Tags className="w-4 h-4 text-slate-500" />
+                          עריכת קטגוריות
+                        </button>
+                      </>
                     )}
                     
                     <button 
                       onClick={() => { 
                         setIsMenuOpen(false); 
                         archiveTrip(activeTrip.id);
-                        window.location.href = window.location.pathname;
+                        if (backHandler) setBackHandler(null);
+                        window.history.pushState({}, '', window.location.pathname);
+                        setUrlTripId(null);
+                        setCurrentTripId(null);
                       }}
                       className="w-full text-right px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm"
                     >
@@ -314,7 +329,10 @@ export default function App() {
             if (activeTrip) {
               deleteTrip(activeTrip.id);
               setShowDeleteConfirm(false);
-              window.location.href = window.location.pathname;
+              if (backHandler) setBackHandler(null);
+              window.history.pushState({}, '', window.location.pathname);
+              setUrlTripId(null);
+              setCurrentTripId(null);
             }
           }}
           onCancel={() => setShowDeleteConfirm(false)}
@@ -329,6 +347,15 @@ export default function App() {
               setCurrentTripId(trip.id);
             }} 
             onCancel={() => setIsCreating(false)} 
+          />
+        ) : activeTrip && isEditingCategories ? (
+          <CategoryEditor
+            categories={activeTrip.categories}
+            onSave={async (newCategories) => {
+              await updateTrip({ ...activeTrip, categories: newCategories });
+              setIsEditingCategories(false);
+            }}
+            onClose={() => setIsEditingCategories(false)}
           />
         ) : activeTrip ? (
           <>
