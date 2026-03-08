@@ -24,6 +24,7 @@ export default function App() {
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showVibeModal, setShowVibeModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -247,7 +248,13 @@ export default function App() {
           
           <div className="flex items-center gap-2">
             {!activeTrip && !isCreating && (
-              <span className="text-[10px] text-white/50 font-mono" dir="ltr">v{metadata.version}</span>
+              <span 
+                className="text-[10px] text-white/50 font-mono cursor-pointer select-none" 
+                dir="ltr"
+                onDoubleClick={() => setShowVibeModal(true)}
+              >
+                v{metadata.version}
+              </span>
             )}
             {activeTrip && !isCreating && (
               <div className="relative" ref={menuRef}>
@@ -321,6 +328,13 @@ export default function App() {
       </header>
 
       <main className="p-4 max-w-xl mx-auto mt-2">
+        <ConfirmDialog 
+          isOpen={showVibeModal}
+          title="אודות"
+          message="vibe by Amir Galanti"
+          onConfirm={() => setShowVibeModal(false)}
+          onCancel={() => setShowVibeModal(false)}
+        />
         <ConfirmDialog 
           isOpen={showDeleteConfirm}
           title="מחיקת טיול"
