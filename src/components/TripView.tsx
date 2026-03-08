@@ -6,7 +6,8 @@ import { Balances } from './Balances';
 import { Statistics } from './Statistics';
 import { ExpenseDetails } from './ExpenseDetails';
 import { ParticipantDetails } from './ParticipantDetails';
-import { Receipt, Users, BarChart3, Plus, Trash2, Pencil, Loader2, ArrowRightLeft, Search, X, ChevronLeft } from 'lucide-react';
+import { ExpenseMap } from './ExpenseMap';
+import { Receipt, Users, BarChart3, Plus, Trash2, Pencil, Loader2, ArrowRightLeft, Search, X, ChevronLeft, MapPin } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { fetchExchangeRates, formatAmount } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
@@ -20,7 +21,7 @@ type Props = {
   onEditChange: (isEditing: boolean) => void;
 };
 
-type Tab = 'EXPENSES' | 'BALANCES' | 'STATISTICS';
+type Tab = 'EXPENSES' | 'BALANCES' | 'STATISTICS' | 'MAP';
 
 export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false, isEditing, onEditChange }: Props) => {
   const [activeTab, setActiveTab] = useState<Tab>('EXPENSES');
@@ -307,6 +308,12 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
         >
           <BarChart3 className="w-4 h-4" /> סטטיסטיקות
         </button>
+        <button 
+          onClick={() => setActiveTab('MAP')}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'MAP' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+        >
+          <MapPin className="w-4 h-4" /> מפה
+        </button>
       </div>
 
       {/* Content */}
@@ -479,6 +486,10 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
 
         {activeTab === 'STATISTICS' && (
           <Statistics trip={trip} />
+        )}
+
+        {activeTab === 'MAP' && (
+          <ExpenseMap trip={trip} />
         )}
       </div>
     </div>

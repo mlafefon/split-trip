@@ -21,6 +21,7 @@ export type Expense = {
   originalCurrency?: string;
   exchangeRate?: number;
   notes?: string;
+  location?: { lat: number; lng: number };
 };
 
 export type Category = {

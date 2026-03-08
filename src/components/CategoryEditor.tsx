@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Category } from '../types';
 import { ICON_MAP } from '../utils/categories';
 import { X, Check, Trash2, Plus, Pencil, GripVertical } from 'lucide-react';
@@ -26,7 +26,13 @@ type Props = {
   onClose: () => void;
 };
 
-const SortableCategoryItem = ({ category, onEdit, onDelete }: { category: Category, onEdit: () => void, onDelete: () => void }) => {
+interface SortableCategoryItemProps {
+  category: Category;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+const SortableCategoryItem: React.FC<SortableCategoryItemProps> = ({ category, onEdit, onDelete }) => {
   const {
     attributes,
     listeners,

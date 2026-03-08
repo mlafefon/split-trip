@@ -126,7 +126,9 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
       const tripWithCode = { ...trip, editCode };
 
       // Create main trip document
-      await setDoc(doc(db, 'trips', trip.id), tripWithCode);
+      // Strip undefined values before saving to Firestore
+      const cleanTrip = JSON.parse(JSON.stringify(tripWithCode));
+      await setDoc(doc(db, 'trips', trip.id), cleanTrip);
       
       // Save ID to local storage for history
       const savedIds = JSON.parse(localStorage.getItem('tripIds') || '[]');
@@ -159,7 +161,12 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
       }
 
       const tripRef = doc(db, 'trips', updatedTrip.id);
-      await updateDoc(tripRef, { ...updatedTrip });
+      
+      // Firestore does not support undefined values. 
+      // JSON stringify/parse is a safe way to strip all undefined properties recursively.
+      const cleanTrip = JSON.parse(JSON.stringify(updatedTrip));
+      
+      await updateDoc(tripRef, cleanTrip);
     } catch (err) {
       console.error('Error updating trip:', err);
       // Revert on error (optional, but good practice)
