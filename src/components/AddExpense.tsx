@@ -68,26 +68,6 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
       : new Date().toISOString().split('T')[0]
   );
   
-  // Location state
-  const [location, setLocation] = useState<{lat: number, lng: number} | undefined>(initialExpense?.location);
-
-  useEffect(() => {
-    if (!initialExpense && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          });
-        },
-        (error) => {
-          console.warn('Error getting location:', error);
-        },
-        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-      );
-    }
-  }, [initialExpense]);
-  
   // Payer state
   const [payerMode, setPayerMode] = useState<'SINGLE' | 'MULTIPLE'>(
     (initialExpense?.payers?.length || 0) > 1 ? 'MULTIPLE' : 'SINGLE'
@@ -362,7 +342,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
           }
         });
       } else if (splitMode === 'SHARES') {
-        const totalShares = Object.values(splitValues).reduce<number>((sum, val) => sum + (parseFloat(val as string) || 0), 0);
+        const totalShares = Object.values(splitValues).reduce((sum, val) => sum + (parseFloat(val as string) || 0), 0);
         Object.entries(splitValues).forEach(([id, val]) => {
           const numVal = parseFloat(val as string);
           if (!isNaN(numVal) && totalShares > 0) {
@@ -383,7 +363,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
           }
         });
       } else if (splitMode === 'SHARES') {
-        const totalShares = Object.values(splitValues).reduce<number>((sum, val) => sum + (parseFloat(val as string) || 0), 0);
+        const totalShares = Object.values(splitValues).reduce((sum, val) => sum + (parseFloat(val as string) || 0), 0);
         Object.entries(splitValues).forEach(([id, val]) => {
           const numVal = parseFloat(val as string);
           if (!isNaN(numVal) && totalShares > 0) {
@@ -540,10 +520,6 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
       exchangeRate: rate,
       notes: notes.trim()
     };
-    
-    if (location) {
-      expense.location = location;
-    }
 
     onSave(expense);
   };
