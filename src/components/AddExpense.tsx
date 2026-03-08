@@ -73,9 +73,11 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
     (initialExpense?.payers?.length || 0) > 1 ? 'MULTIPLE' : 'SINGLE'
   );
   const [singlePayer, setSinglePayer] = useState(
-    (initialExpense?.payers && initialExpense.payers.length === 1) 
-      ? initialExpense.payers[0].participantId 
-      : (initialExpense as any)?.paidBy || (initialData?.payers?.[0]?.participantId || '')
+    trip.participants.length === 1 
+      ? trip.participants[0].id
+      : (initialExpense?.payers && initialExpense.payers.length === 1) 
+        ? initialExpense.payers[0].participantId 
+        : (initialExpense as any)?.paidBy || (initialData?.payers?.[0]?.participantId || '')
   );
   const [multiPayers, setMultiPayers] = useState<Record<string, string>>({});
 
@@ -410,12 +412,17 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
 
     const finalDescription = description.trim() || tag;
 
-    if (payerMode === 'SINGLE' && !singlePayer) {
+    let actualSinglePayer = singlePayer;
+    if (trip.participants.length === 1) {
+      actualSinglePayer = trip.participants[0].id;
+    }
+
+    if (payerMode === 'SINGLE' && !actualSinglePayer) {
       alert('חובה לבחור מי שילם');
       return;
     }
 
-    if (isTransfer && payerMode === 'SINGLE' && selectedBeneficiaries.includes(singlePayer)) {
+    if (isTransfer && payerMode === 'SINGLE' && selectedBeneficiaries.includes(actualSinglePayer)) {
       alert('לא ניתן להעביר כסף לעצמך');
       return;
     }
@@ -427,7 +434,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
     let finalPayers: { participantId: string; amount: number }[] = [];
     
     if (payerMode === 'SINGLE') {
-      finalPayers = [{ participantId: singlePayer, amount: finalAmountInTripCurrency }];
+      finalPayers = [{ participantId: actualSinglePayer, amount: finalAmountInTripCurrency }];
     } else {
       let totalPaid = 0;
       finalPayers = trip.participants.map(p => {
@@ -640,237 +647,241 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
         <hr className="border-slate-100" />
 
         {/* Who Paid Section */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">{isTransfer ? 'מי מעביר?' : 'מי שילם?'}</label>
-          
-          <Select
-            value={payerMode === 'MULTIPLE' ? 'MULTIPLE' : singlePayer}
-            onChange={(val) => {
-              if (val === 'MULTIPLE') {
-                setPayerMode('MULTIPLE');
-              } else {
-                setPayerMode('SINGLE');
-                setSinglePayer(val);
-              }
-            }}
-            options={[
-              ...trip.participants.map(p => ({ value: p.id, label: p.name })),
-              { value: 'MULTIPLE', label: 'מספר משתתפים' }
-            ]}
-            placeholder="בחר משתתף..."
-            className="mb-3"
-          />
+        {trip.participants.length > 1 && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">{isTransfer ? 'מי מעביר?' : 'מי שילם?'}</label>
+            
+            <Select
+              value={payerMode === 'MULTIPLE' ? 'MULTIPLE' : singlePayer}
+              onChange={(val) => {
+                if (val === 'MULTIPLE') {
+                  setPayerMode('MULTIPLE');
+                } else {
+                  setPayerMode('SINGLE');
+                  setSinglePayer(val);
+                }
+              }}
+              options={[
+                ...trip.participants.map(p => ({ value: p.id, label: p.name })),
+                { value: 'MULTIPLE', label: 'מספר משתתפים' }
+              ]}
+              placeholder="בחר משתתף..."
+              className="mb-3"
+            />
 
-          {payerMode === 'MULTIPLE' && (
-            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
-              {trip.participants.map(p => {
-                const currentVal = parseFloat(multiPayers[p.id] || '0');
-                const otherSum = Object.entries(multiPayers)
-                  .filter(([id]) => id !== p.id)
-                  .reduce((sum, [, val]) => sum + (parseFloat(val as string) || 0), 0);
+            {payerMode === 'MULTIPLE' && (
+              <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100 animate-in fade-in slide-in-from-top-2 duration-200">
+                {trip.participants.map(p => {
+                  const currentVal = parseFloat(multiPayers[p.id] || '0');
+                  const otherSum = Object.entries(multiPayers)
+                    .filter(([id]) => id !== p.id)
+                    .reduce((sum, [, val]) => sum + (parseFloat(val as string) || 0), 0);
+                  
+                  const totalTarget = parseFloat(amount || '0');
+                  const maxAllowed = Math.max(0, totalTarget - otherSum);
+                  const isOverLimit = currentVal > maxAllowed + 0.01;
+
+                  return (
+                    <div key={p.id} className="flex items-center justify-between gap-4">
+                      <span className="text-sm font-medium text-slate-700">{p.name}</span>
+                      <div className="relative w-40">
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={multiPayers[p.id] || ''}
+                          onChange={(e) => setMultiPayers({...multiPayers, [p.id]: e.target.value})}
+                          className={`w-full p-2 pl-12 pr-4 border rounded-lg text-left outline-none transition-colors ${
+                            isOverLimit 
+                              ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
+                              : 'border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                          }`}
+                          dir="ltr"
+                          placeholder="0.00"
+                        />
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{currency}</span>
+                      </div>
+                    </div>
+                  );
+                })}
                 
-                const totalTarget = parseFloat(amount || '0');
-                const maxAllowed = Math.max(0, totalTarget - otherSum);
-                const isOverLimit = currentVal > maxAllowed + 0.01;
+                <div className="text-xs text-slate-500 text-left mt-2 pt-2 border-t border-slate-200" dir="ltr">
+                  {(() => {
+                    const sum = Object.values(multiPayers).reduce<number>((s, val) => s + (parseFloat(val as string) || 0), 0);
+                    const total = parseFloat(amount || '0');
+                    const diff = Math.abs(sum - total);
+                    const isMatch = diff < 0.01;
+                    
+                    return (
+                      <span className={isMatch ? 'text-emerald-600 font-medium' : 'text-red-500 font-medium'}>
+                        נשאר לשלם: {formatAmount(total - sum)} עד ל {formatAmount(total)}
+                      </span>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {trip.participants.length > 1 && <hr className="border-slate-100" />}
+
+        {/* How to Split Section */}
+        {trip.participants.length > 1 && (
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">{isTransfer ? 'למי מעבירים?' : 'איך מתחלקים?'}</label>
+            
+            {/* Controls */}
+            {!isTransfer && (
+              <div className="flex gap-2 mb-4">
+                <div className="relative flex-1">
+                   <Select
+                     value={splitMode}
+                     onChange={(val) => handleModeChange(val as 'EXACT' | 'PERCENTAGE' | 'SHARES')}
+                     options={[
+                       { value: 'EXACT', label: 'סכומים מדויקים' },
+                       { value: 'PERCENTAGE', label: 'חלוקה לפי אחוזים' },
+                       { value: 'SHARES', label: 'חלוקה לפי חלקים / מניות' }
+                     ]}
+                   />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleEqualSplit}
+                  className="px-4 py-2 bg-indigo-50 text-indigo-700 text-sm font-medium rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors"
+                >
+                  חלוקה שווה
+                </button>
+              </div>
+            )}
+
+            <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+              {trip.participants.map(p => {
+                // In transfer mode, hide the payer from the list
+                if (isTransfer && p.id === singlePayer) return null;
+
+                const isSelected = selectedBeneficiaries.includes(p.id);
+                const currentVal = parseFloat(splitValues[p.id] || '0');
+                
+                // Calculate remaining/max
+                let isOverLimit = false;
+                if (splitMode !== 'SHARES') {
+                  const otherSum = Object.entries(splitValues)
+                    .filter(([id]) => id !== p.id)
+                    .reduce((sum, [, val]) => {
+                      const v = parseFloat(val as string) || 0;
+                      return sum + (v > 0 ? v : 0);
+                    }, 0);
+                  
+                  const totalTarget = splitMode === 'EXACT' ? parseFloat(amount || '0') : 100;
+                  const maxAllowed = Math.max(0, totalTarget - otherSum);
+                  isOverLimit = currentVal > maxAllowed + 0.01;
+                }
+
+                // Determine split amount text
+                let splitAmountText = '';
+                if (isSelected) {
+                   const total = parseFloat(amount || '0');
+                   if (splitMode === 'PERCENTAGE') {
+                      const pct = parseFloat(splitValues[p.id] || '0');
+                      if (!isNaN(pct) && !isNaN(total)) {
+                         const val = (pct / 100) * total;
+                         splitAmountText = `(${formatAmount(val)} ${currency})`;
+                      }
+                   } else if (splitMode === 'SHARES') {
+                      const shares = parseFloat(splitValues[p.id] || '0');
+                      const totalShares = Object.entries(splitValues)
+                        .filter(([id]) => selectedBeneficiaries.includes(id))
+                        .reduce((sum, [, val]) => sum + (parseFloat(val as string) || 0), 0);
+                      if (!isNaN(shares) && !isNaN(total) && totalShares > 0) {
+                         const val = (shares / totalShares) * total;
+                         splitAmountText = `(${formatAmount(val)} ${currency})`;
+                      }
+                   }
+                }
+
+                const isManual = manualSplitIds.includes(p.id);
 
                 return (
-                  <div key={p.id} className="flex items-center justify-between gap-4">
-                    <span className="text-sm font-medium text-slate-700">{p.name}</span>
-                    <div className="relative w-40">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={multiPayers[p.id] || ''}
-                        onChange={(e) => setMultiPayers({...multiPayers, [p.id]: e.target.value})}
-                        className={`w-full p-2 pl-12 pr-4 border rounded-lg text-left outline-none transition-colors ${
-                          isOverLimit 
-                            ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
-                            : 'border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
-                        }`}
-                        dir="ltr"
-                        placeholder="0.00"
-                      />
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{currency}</span>
+                  <div 
+                    key={p.id} 
+                    className={`flex flex-col gap-1 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-50'}`}
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <div 
+                        className="flex items-center gap-3 cursor-pointer select-none flex-1"
+                        onClick={() => {
+                          if (isTransfer) {
+                            // Exclusive selection for transfer
+                            setSelectedBeneficiaries([p.id]);
+                            // Set 100% value
+                            const total = parseFloat(amount || '0');
+                            setSplitValues({ [p.id]: splitMode === 'EXACT' ? total.toString() : '100' });
+                          } else {
+                            toggleBeneficiary(p.id);
+                          }
+                        }}
+                      >
+                        <div className={`w-6 h-6 ${isTransfer ? 'rounded-full' : 'rounded-md'} border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300'}`}>
+                          {isSelected && (isTransfer ? <div className="w-2.5 h-2.5 rounded-full bg-white" /> : <Check className="w-4 h-4 stroke-[3]" />)}
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-slate-700">
+                            {p.name}
+                          </span>
+                          {splitAmountText && <span className="text-xs font-normal text-slate-500">{splitAmountText}</span>}
+                        </div>
+                      </div>
+                      
+                      {!isTransfer && (
+                        <div className="relative w-40">
+                          <input
+                            type="number"
+                            min="0"
+                            step={splitMode === 'EXACT' ? "0.01" : splitMode === 'PERCENTAGE' ? "0.1" : "1"}
+                            value={splitValues[p.id] || ''}
+                            onChange={(e) => {
+                              if (!isSelected) toggleBeneficiary(p.id);
+                              handleSplitChange(p.id, e.target.value);
+                            }}
+                            className={`w-full p-2 pl-12 pr-8 border rounded-lg text-left outline-none transition-colors ${
+                              isOverLimit 
+                                ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
+                                : isManual && splitMode !== 'SHARES'
+                                  ? 'border-amber-200 bg-amber-50 focus:border-amber-400 focus:ring-1 focus:ring-amber-400'
+                                  : 'border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
+                            }`}
+                            dir="ltr"
+                            placeholder="0"
+                            disabled={!isSelected}
+                          />
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
+                            {splitMode === 'EXACT' ? currency : splitMode === 'PERCENTAGE' ? '%' : 'חלקים'}
+                          </span>
+                          {isManual && splitMode !== 'SHARES' && (
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-400 pointer-events-none" title="סכום קבוע ידנית">
+                              <Lock className="w-3 h-3" />
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
               })}
               
-              <div className="text-xs text-slate-500 text-left mt-2 pt-2 border-t border-slate-200" dir="ltr">
-                {(() => {
-                  const sum = Object.values(multiPayers).reduce<number>((s, val) => s + (parseFloat(val as string) || 0), 0);
-                  const total = parseFloat(amount || '0');
-                  const diff = Math.abs(sum - total);
-                  const isMatch = diff < 0.01;
-                  
-                  return (
-                    <span className={isMatch ? 'text-emerald-600 font-medium' : 'text-red-500 font-medium'}>
-                      נשאר לשלם: {formatAmount(total - sum)} עד ל {formatAmount(total)}
-                    </span>
-                  );
-                })()}
-              </div>
-            </div>
-          )}
-        </div>
-
-        <hr className="border-slate-100" />
-
-        {/* How to Split Section */}
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">{isTransfer ? 'למי מעבירים?' : 'איך מתחלקים?'}</label>
-          
-          {/* Controls */}
-          {!isTransfer && (
-            <div className="flex gap-2 mb-4">
-              <div className="relative flex-1">
-                 <Select
-                   value={splitMode}
-                   onChange={(val) => handleModeChange(val as 'EXACT' | 'PERCENTAGE' | 'SHARES')}
-                   options={[
-                     { value: 'EXACT', label: 'סכומים מדויקים' },
-                     { value: 'PERCENTAGE', label: 'חלוקה לפי אחוזים' },
-                     { value: 'SHARES', label: 'חלוקה לפי חלקים / מניות' }
-                   ]}
-                 />
-              </div>
-              <button
-                type="button"
-                onClick={handleEqualSplit}
-                className="px-4 py-2 bg-indigo-50 text-indigo-700 text-sm font-medium rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors"
-              >
-                חלוקה שווה
-              </button>
-            </div>
-          )}
-
-          <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-            {trip.participants.map(p => {
-              // In transfer mode, hide the payer from the list
-              if (isTransfer && p.id === singlePayer) return null;
-
-              const isSelected = selectedBeneficiaries.includes(p.id);
-              const currentVal = parseFloat(splitValues[p.id] || '0');
-              
-              // Calculate remaining/max
-              let isOverLimit = false;
-              if (splitMode !== 'SHARES') {
-                const otherSum = Object.entries(splitValues)
-                  .filter(([id]) => id !== p.id)
-                  .reduce((sum, [, val]) => {
-                    const v = parseFloat(val as string) || 0;
-                    return sum + (v > 0 ? v : 0);
-                  }, 0);
-                
-                const totalTarget = splitMode === 'EXACT' ? parseFloat(amount || '0') : 100;
-                const maxAllowed = Math.max(0, totalTarget - otherSum);
-                isOverLimit = currentVal > maxAllowed + 0.01;
-              }
-
-              // Determine split amount text
-              let splitAmountText = '';
-              if (isSelected) {
-                 const total = parseFloat(amount || '0');
-                 if (splitMode === 'PERCENTAGE') {
-                    const pct = parseFloat(splitValues[p.id] || '0');
-                    if (!isNaN(pct) && !isNaN(total)) {
-                       const val = (pct / 100) * total;
-                       splitAmountText = `(${formatAmount(val)} ${currency})`;
-                    }
-                 } else if (splitMode === 'SHARES') {
-                    const shares = parseFloat(splitValues[p.id] || '0');
-                    const totalShares = Object.entries(splitValues)
-                      .filter(([id]) => selectedBeneficiaries.includes(id))
-                      .reduce((sum, [, val]) => sum + (parseFloat(val as string) || 0), 0);
-                    if (!isNaN(shares) && !isNaN(total) && totalShares > 0) {
-                       const val = (shares / totalShares) * total;
-                       splitAmountText = `(${formatAmount(val)} ${currency})`;
-                    }
-                 }
-              }
-
-              const isManual = manualSplitIds.includes(p.id);
-
-              return (
-                <div 
-                  key={p.id} 
-                  className={`flex flex-col gap-1 transition-opacity ${isSelected ? 'opacity-100' : 'opacity-50'}`}
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div 
-                      className="flex items-center gap-3 cursor-pointer select-none flex-1"
-                      onClick={() => {
-                        if (isTransfer) {
-                          // Exclusive selection for transfer
-                          setSelectedBeneficiaries([p.id]);
-                          // Set 100% value
-                          const total = parseFloat(amount || '0');
-                          setSplitValues({ [p.id]: splitMode === 'EXACT' ? total.toString() : '100' });
-                        } else {
-                          toggleBeneficiary(p.id);
-                        }
-                      }}
-                    >
-                      <div className={`w-6 h-6 ${isTransfer ? 'rounded-full' : 'rounded-md'} border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-slate-300'}`}>
-                        {isSelected && (isTransfer ? <div className="w-2.5 h-2.5 rounded-full bg-white" /> : <Check className="w-4 h-4 stroke-[3]" />)}
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium text-slate-700">
-                          {p.name}
-                        </span>
-                        {splitAmountText && <span className="text-xs font-normal text-slate-500">{splitAmountText}</span>}
-                      </div>
-                    </div>
-                    
-                    {!isTransfer && (
-                      <div className="relative w-40">
-                        <input
-                          type="number"
-                          min="0"
-                          step={splitMode === 'EXACT' ? "0.01" : splitMode === 'PERCENTAGE' ? "0.1" : "1"}
-                          value={splitValues[p.id] || ''}
-                          onChange={(e) => {
-                            if (!isSelected) toggleBeneficiary(p.id);
-                            handleSplitChange(p.id, e.target.value);
-                          }}
-                          className={`w-full p-2 pl-12 pr-8 border rounded-lg text-left outline-none transition-colors ${
-                            isOverLimit 
-                              ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
-                              : isManual && splitMode !== 'SHARES'
-                                ? 'border-amber-200 bg-amber-50 focus:border-amber-400 focus:ring-1 focus:ring-amber-400'
-                                : 'border-slate-200 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500'
-                          }`}
-                          dir="ltr"
-                          placeholder="0"
-                          disabled={!isSelected}
-                        />
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">
-                          {splitMode === 'EXACT' ? currency : splitMode === 'PERCENTAGE' ? '%' : 'חלקים'}
-                        </span>
-                        {isManual && splitMode !== 'SHARES' && (
-                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-amber-400 pointer-events-none" title="סכום קבוע ידנית">
-                            <Lock className="w-3 h-3" />
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
+              {!isTransfer && (
+                <div className="text-xs text-slate-500 text-left mt-2 pt-2 border-t border-slate-200" dir="ltr">
+                  {splitMode === 'SHARES' ? (
+                    `סה"כ חלקים: ${formatAmount(Object.values(splitValues).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0))}`
+                  ) : (
+                    `סה"כ: ${formatAmount(Object.values(splitValues).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0))} / ${splitMode === 'EXACT' ? (amount || '0.00') : '100%'}`
+                  )}
                 </div>
-              );
-            })}
-            
-            {!isTransfer && (
-              <div className="text-xs text-slate-500 text-left mt-2 pt-2 border-t border-slate-200" dir="ltr">
-                {splitMode === 'SHARES' ? (
-                  `סה"כ חלקים: ${formatAmount(Object.values(splitValues).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0))}`
-                ) : (
-                  `סה"כ: ${formatAmount(Object.values(splitValues).reduce<number>((sum, val: string) => sum + (parseFloat(val) || 0), 0))} / ${splitMode === 'EXACT' ? (amount || '0.00') : '100%'}`
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Notes */}
         <div>

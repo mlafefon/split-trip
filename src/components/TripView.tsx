@@ -293,12 +293,14 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
         >
           <Receipt className="w-4 h-4" /> הוצאות
         </button>
-        <button 
-          onClick={() => setActiveTab('BALANCES')}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'BALANCES' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-        >
-          <Users className="w-4 h-4" /> יתרות
-        </button>
+        {trip.participants.length > 1 && (
+          <button 
+            onClick={() => setActiveTab('BALANCES')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'BALANCES' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            <Users className="w-4 h-4" /> יתרות
+          </button>
+        )}
         <button 
           onClick={() => setActiveTab('STATISTICS')}
           className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium transition-all ${activeTab === 'STATISTICS' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
@@ -376,7 +378,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
                             {Icon && <Icon className="w-3 h-3" style={{ color: iconColor }} />}
                             {expense.tag}
                           </span>
-                          <span>שולם ע"י {payerText}</span>
+                          {trip.participants.length > 1 && <span>שולם ע"י {payerText}</span>}
                         </div>
                       </div>
                       <div className="flex items-center gap-3 pl-2">
@@ -450,7 +452,13 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
                 )}
                 
                 <button 
-                  onClick={() => setShowMenu(!showMenu)}
+                  onClick={() => {
+                    if (trip.participants.length === 1) {
+                      setAddMode('EXPENSE');
+                    } else {
+                      setShowMenu(!showMenu);
+                    }
+                  }}
                   className={`bg-indigo-600 text-white p-4 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95 ${showMenu ? 'rotate-45 bg-slate-800' : ''}`}
                 >
                   <Plus className="w-6 h-6" />

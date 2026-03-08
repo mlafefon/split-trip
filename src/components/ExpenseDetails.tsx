@@ -54,36 +54,40 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
 
       <div className="space-y-6">
         {/* Payers Section */}
-        <div>
-          <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-            <User className="w-4 h-4" />
-            מי שילם?
-          </h3>
-          <div className="bg-slate-50 rounded-xl p-4 space-y-2">
-            {payers.map((payer, idx) => (
-              <div key={idx} className="flex justify-between items-center">
-                <span className="text-slate-700 font-medium">{getParticipantName(payer.participantId)}</span>
-                <span className="text-slate-600" dir="ltr">{formatAmount(payer.amount)} {trip.tripCurrency}</span>
-              </div>
-            ))}
+        {trip.participants.length > 1 && (
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <User className="w-4 h-4" />
+              מי שילם?
+            </h3>
+            <div className="bg-slate-50 rounded-xl p-4 space-y-2">
+              {payers.map((payer, idx) => (
+                <div key={idx} className="flex justify-between items-center">
+                  <span className="text-slate-700 font-medium">{getParticipantName(payer.participantId)}</span>
+                  <span className="text-slate-600" dir="ltr">{formatAmount(payer.amount)} {trip.tripCurrency}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Splits Section */}
-        <div>
-          <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            עבור מי?
-          </h3>
-          <div className="bg-slate-50 rounded-xl p-4 space-y-2">
-            {expense.splits.map((split, idx) => (
-              <div key={idx} className="flex justify-between items-center">
-                <span className="text-slate-700 font-medium">{getParticipantName(split.participantId)}</span>
-                <span className="text-slate-600" dir="ltr">{formatAmount(split.amount)} {trip.tripCurrency}</span>
-              </div>
-            ))}
+        {trip.participants.length > 1 && (
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              עבור מי?
+            </h3>
+            <div className="bg-slate-50 rounded-xl p-4 space-y-2">
+              {expense.splits.map((split, idx) => (
+                <div key={idx} className="flex justify-between items-center">
+                  <span className="text-slate-700 font-medium">{getParticipantName(split.participantId)}</span>
+                  <span className="text-slate-600" dir="ltr">{formatAmount(split.amount)} {trip.tripCurrency}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Notes Section */}
         {expense.notes && (
