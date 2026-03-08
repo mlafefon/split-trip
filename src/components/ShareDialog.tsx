@@ -73,7 +73,10 @@ export const ShareDialog = ({ isOpen, onClose, tripId, tripName, editCode, canEd
                   {editUrl}
                 </div>
                 <button
-                  onClick={() => setShowQrEdit(!showQrEdit)}
+                  onClick={() => {
+                    setShowQrEdit(!showQrEdit);
+                    if (!showQrEdit) setShowQrView(false);
+                  }}
                   className={`p-3 rounded-xl transition-all ${
                     showQrEdit
                       ? 'bg-indigo-100 text-indigo-700 border border-indigo-300'
@@ -124,7 +127,10 @@ export const ShareDialog = ({ isOpen, onClose, tripId, tripName, editCode, canEd
                 {viewUrl}
               </div>
               <button
-                onClick={() => setShowQrView(!showQrView)}
+                onClick={() => {
+                  setShowQrView(!showQrView);
+                  if (!showQrView) setShowQrEdit(false);
+                }}
                 className={`p-3 rounded-xl transition-all ${
                   showQrView
                     ? 'bg-slate-200 text-slate-800 border border-slate-300'

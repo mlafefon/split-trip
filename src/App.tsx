@@ -3,9 +3,10 @@ import { TripList } from './components/TripList';
 import { TripView } from './components/TripView';
 import { TripForm } from './components/TripForm';
 import { useFirebaseTrips } from './hooks/useFirebaseTrips';
-import { ChevronRight, Loader2, Share2, Pencil, WifiOff } from 'lucide-react';
+import { ChevronRight, Loader2, Share2, Pencil, WifiOff, MoreVertical, Archive, Trash2 } from 'lucide-react';
 import { ShareDialog } from './components/ShareDialog';
 import { InstallPrompt } from './components/InstallPrompt';
+import { ConfirmDialog } from './components/ConfirmDialog';
 import metadata from '../metadata.json';
 
 import { ExportReport } from './components/ExportReport';
@@ -18,6 +19,20 @@ export default function App() {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [isEditingTrip, setIsEditingTrip] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -50,11 +65,16 @@ export default function App() {
 
   const { 
     trips, 
+    archivedTrips,
     currentTrip: firebaseTrip, 
     createTrip, 
     updateTrip, 
     deleteTrip,
+    archiveTrip,
+    unarchiveTrip,
+    loadArchivedTrips,
     loading,
+    loadingArchived,
     canEdit
   } = useFirebaseTrips(urlTripId || undefined, isReadOnly);
 
@@ -227,29 +247,86 @@ export default function App() {
             {!activeTrip && !isCreating && (
               <span className="text-[10px] text-white/50 font-mono" dir="ltr">v{metadata.version}</span>
             )}
-            {activeTrip && !isCreating && activeTripCanEdit && !isEditingTrip && (
-              <button 
-                onClick={() => setIsEditingTrip(true)}
-                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                title="ערוך פרטי טיול"
-              >
-                <Pencil className="w-5 h-5" />
-              </button>
-            )}
             {activeTrip && !isCreating && (
-              <button 
-                onClick={handleShare}
-                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                title="שתף טיול"
-              >
-                <Share2 className="w-5 h-5" />
-              </button>
+              <div className="relative" ref={menuRef}>
+                <button 
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                  title="תפריט"
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+                
+                {isMenuOpen && (
+                  <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-50 text-slate-800">
+                    <button 
+                      onClick={() => { setIsMenuOpen(false); handleShare(); }}
+                      className="w-full text-right px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm"
+                    >
+                      <Share2 className="w-4 h-4 text-slate-500" />
+                      שיתוף טיול
+                    </button>
+                    
+                    {activeTripCanEdit && !isEditingTrip && (
+                      <button 
+                        onClick={() => { setIsMenuOpen(false); setIsEditingTrip(true); }}
+                        className="w-full text-right px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm"
+                      >
+                        <Pencil className="w-4 h-4 text-slate-500" />
+                        עריכת טיול
+                      </button>
+                    )}
+                    
+                    <button 
+                      onClick={() => { 
+                        setIsMenuOpen(false); 
+                        archiveTrip(activeTrip.id);
+                        if (backHandler) setBackHandler(null);
+                        window.history.pushState({}, '', window.location.pathname);
+                        setUrlTripId(null);
+                        setCurrentTripId(null);
+                      }}
+                      className="w-full text-right px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm"
+                    >
+                      <Archive className="w-4 h-4 text-slate-500" />
+                      העבר לארכיון
+                    </button>
+
+                    {activeTripCanEdit && (
+                      <button 
+                        onClick={() => { setIsMenuOpen(false); setShowDeleteConfirm(true); }}
+                        className="w-full text-right px-4 py-3 hover:bg-red-50 flex items-center gap-3 text-sm text-red-600 border-t border-slate-100"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                        מחיקת טיול
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
       </header>
 
       <main className="p-4 max-w-xl mx-auto mt-2">
+        <ConfirmDialog 
+          isOpen={showDeleteConfirm}
+          title="מחיקת טיול"
+          message="האם אתה בטוח שברצונך למחוק טיול זה? הפעולה תסיר אותו מהרשימה שלך."
+          onConfirm={() => {
+            if (activeTrip) {
+              deleteTrip(activeTrip.id);
+              setShowDeleteConfirm(false);
+              if (backHandler) setBackHandler(null);
+              window.history.pushState({}, '', window.location.pathname);
+              setUrlTripId(null);
+              setCurrentTripId(null);
+            }
+          }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+
         {isCreating ? (
           <TripForm 
             onSave={async (trip) => {
@@ -282,9 +359,13 @@ export default function App() {
         ) : (
           <TripList 
             trips={trips} 
+            archivedTrips={archivedTrips}
+            loadingArchived={loadingArchived}
             onSelect={handleSelectTrip} 
             onCreateNew={() => setIsCreating(true)} 
             onDelete={deleteTrip} 
+            onLoadArchived={loadArchivedTrips}
+            onUnarchive={unarchiveTrip}
           />
         )}
       </main>

@@ -1,18 +1,23 @@
 import { useState } from 'react';
 import { Trip } from '../types';
-import { Plane, Users, Calendar, Trash2 } from 'lucide-react';
+import { Plane, Users, Calendar, Trash2, Archive } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { formatAmount } from '../utils/currency';
 
 type Props = {
   trips: Trip[];
+  archivedTrips: Trip[];
+  loadingArchived: boolean;
   onSelect: (id: string) => void;
   onCreateNew: () => void;
   onDelete: (id: string) => void;
+  onLoadArchived: () => void;
+  onUnarchive: (id: string) => void;
 };
 
-export const TripList = ({ trips, onSelect, onCreateNew, onDelete }: Props) => {
+export const TripList = ({ trips, archivedTrips, loadingArchived, onSelect, onCreateNew, onDelete, onLoadArchived, onUnarchive }: Props) => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   const handleDelete = () => {
     if (deleteId) {
@@ -101,6 +106,61 @@ export const TripList = ({ trips, onSelect, onCreateNew, onDelete }: Props) => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      <div className="mt-8 pt-6 border-t border-slate-200 text-center">
+        <button 
+          onClick={() => {
+            if (!showArchived) {
+              onLoadArchived();
+            }
+            setShowArchived(!showArchived);
+          }}
+          className="text-slate-500 hover:text-indigo-600 text-sm font-medium flex items-center justify-center gap-2 mx-auto"
+        >
+          <Archive className="w-4 h-4" />
+          {showArchived ? 'הסתר טיולים בארכיון' : 'הצג טיולים בארכיון'}
+        </button>
+      </div>
+
+      {showArchived && (
+        <div className="mt-4 space-y-4">
+          {loadingArchived ? (
+            <div className="text-center py-4 text-slate-500">טוען ארכיון...</div>
+          ) : archivedTrips.length === 0 ? (
+            <div className="text-center py-4 text-slate-500">אין טיולים בארכיון</div>
+          ) : (
+            <div className="grid gap-4 opacity-75">
+              {archivedTrips.map(trip => (
+                <div 
+                  key={trip.id} 
+                  className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col gap-3 relative overflow-hidden"
+                >
+                  <div className="flex justify-between items-start">
+                    <h3 className="text-lg font-bold text-slate-600">{trip.destination}</h3>
+                    <button 
+                      onClick={() => onUnarchive(trip.id)}
+                      className="text-indigo-600 hover:text-indigo-800 text-sm font-medium bg-indigo-50 px-3 py-1 rounded-lg"
+                    >
+                      החזר מהארכיון
+                    </button>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 text-sm text-slate-500">
+                    <div className="flex items-center gap-1">
+                      <Users className="w-4 h-4" />
+                      <span>{trip.participants.length} משתתפים</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      <span>{new Date(trip.createdAt).toLocaleDateString('he-IL')}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -16,8 +16,10 @@ import { DEFAULT_CATEGORIES } from '../utils/categories';
 
 export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) => {
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [archivedTrips, setArchivedTrips] = useState<Trip[]>([]);
   const [currentTrip, setCurrentTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingArchived, setLoadingArchived] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [canEdit, setCanEdit] = useState(false);
 
@@ -97,9 +99,10 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
         
         setCanEdit(!isReadOnly && hasValidToken);
 
-        // Save to local history if not already there
+        // Save to local history if not already there, AND it's not archived
         const savedIds = JSON.parse(localStorage.getItem('tripIds') || '[]');
-        if (!savedIds.includes(tripId)) {
+        const archivedIds = JSON.parse(localStorage.getItem('archivedTripIds') || '[]');
+        if (!savedIds.includes(tripId) && !archivedIds.includes(tripId)) {
           localStorage.setItem('tripIds', JSON.stringify([...savedIds, tripId]));
         }
       } else {
@@ -173,14 +176,80 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
     setTrips(prev => prev.filter(t => t.id !== id));
   };
 
+  const archiveTrip = (id: string) => {
+    const savedIds = JSON.parse(localStorage.getItem('tripIds') || '[]');
+    const newIds = savedIds.filter((tid: string) => tid !== id);
+    localStorage.setItem('tripIds', JSON.stringify(newIds));
+    
+    const archivedIds = JSON.parse(localStorage.getItem('archivedTripIds') || '[]');
+    if (!archivedIds.includes(id)) {
+      localStorage.setItem('archivedTripIds', JSON.stringify([...archivedIds, id]));
+    }
+    
+    setTrips(prev => prev.filter(t => t.id !== id));
+  };
+
+  const unarchiveTrip = async (id: string) => {
+    const archivedIds = JSON.parse(localStorage.getItem('archivedTripIds') || '[]');
+    const newArchivedIds = archivedIds.filter((tid: string) => tid !== id);
+    localStorage.setItem('archivedTripIds', JSON.stringify(newArchivedIds));
+    
+    const savedIds = JSON.parse(localStorage.getItem('tripIds') || '[]');
+    if (!savedIds.includes(id)) {
+      localStorage.setItem('tripIds', JSON.stringify([id, ...savedIds]));
+    }
+    
+    setArchivedTrips(prev => prev.filter(t => t.id !== id));
+    
+    try {
+      const docRef = doc(db, 'trips', id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setTrips(prev => [{ id: docSnap.id, ...docSnap.data() } as Trip, ...prev]);
+      }
+    } catch (err) {
+      console.error('Error fetching unarchived trip:', err);
+    }
+  };
+
+  const loadArchivedTrips = async () => {
+    setLoadingArchived(true);
+    const archivedIds = JSON.parse(localStorage.getItem('archivedTripIds') || '[]');
+    try {
+      const tripsData: Trip[] = [];
+      const validIds: string[] = [];
+      for (const id of archivedIds) {
+        const docRef = doc(db, 'trips', id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          tripsData.push({ id: docSnap.id, ...docSnap.data() } as Trip);
+          validIds.push(id);
+        }
+      }
+      if (validIds.length !== archivedIds.length) {
+        localStorage.setItem('archivedTripIds', JSON.stringify(validIds));
+      }
+      setArchivedTrips(tripsData);
+    } catch (err) {
+      console.error('Error loading archived trips:', err);
+    } finally {
+      setLoadingArchived(false);
+    }
+  };
+
   return {
     trips,
+    archivedTrips,
     currentTrip,
     loading,
+    loadingArchived,
     error,
     createTrip,
     updateTrip,
     deleteTrip,
+    archiveTrip,
+    unarchiveTrip,
+    loadArchivedTrips,
     canEdit
   };
 };
