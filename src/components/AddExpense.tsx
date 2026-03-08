@@ -342,7 +342,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
           }
         });
       } else if (splitMode === 'SHARES') {
-        const totalShares = Object.values(splitValues).reduce((sum, val) => sum + (parseFloat(val as string) || 0), 0);
+        const totalShares = Object.values(splitValues).reduce<number>((sum, val) => sum + (parseFloat(val as string) || 0), 0);
         Object.entries(splitValues).forEach(([id, val]) => {
           const numVal = parseFloat(val as string);
           if (!isNaN(numVal) && totalShares > 0) {
@@ -363,7 +363,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
           }
         });
       } else if (splitMode === 'SHARES') {
-        const totalShares = Object.values(splitValues).reduce((sum, val) => sum + (parseFloat(val as string) || 0), 0);
+        const totalShares = Object.values(splitValues).reduce<number>((sum, val) => sum + (parseFloat(val as string) || 0), 0);
         Object.entries(splitValues).forEach(([id, val]) => {
           const numVal = parseFloat(val as string);
           if (!isNaN(numVal) && totalShares > 0) {

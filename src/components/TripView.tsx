@@ -473,7 +473,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
             trip={trip} 
             exchangeRate={exchangeRate} 
             onSelectParticipant={setViewingParticipantId}
-            onSettleDebt={handleSettleDebt}
+            onSettleDebt={!isReadOnly ? handleSettleDebt : undefined}
           />
         )}
 
