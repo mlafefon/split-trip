@@ -33,13 +33,22 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
 
       try {
         const tripsData: Trip[] = [];
+        const validIds: string[] = [];
+        
         for (const id of savedIds) {
           const docRef = doc(db, 'trips', id);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             tripsData.push({ id: docSnap.id, ...docSnap.data() } as Trip);
+            validIds.push(id);
           }
         }
+        
+        // Clean up localStorage if any trips were deleted from the server
+        if (validIds.length !== savedIds.length) {
+          localStorage.setItem('tripIds', JSON.stringify(validIds));
+        }
+        
         setTrips(tripsData);
       } catch (err) {
         console.error('Error loading trips:', err);
