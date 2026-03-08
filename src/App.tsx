@@ -3,7 +3,7 @@ import { TripList } from './components/TripList';
 import { TripView } from './components/TripView';
 import { TripForm } from './components/TripForm';
 import { useFirebaseTrips } from './hooks/useFirebaseTrips';
-import { ChevronRight, Loader2, Share2, Pencil } from 'lucide-react';
+import { ChevronRight, Loader2, Share2, Pencil, WifiOff } from 'lucide-react';
 import { ShareDialog } from './components/ShareDialog';
 import { InstallPrompt } from './components/InstallPrompt';
 import metadata from '../metadata.json';
@@ -17,6 +17,20 @@ export default function App() {
   const [isExportView, setIsExportView] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [isEditingTrip, setIsEditingTrip] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -175,6 +189,12 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-24" dir="rtl">
       <header className="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-20">
+        {isOffline && (
+          <div className="absolute top-full left-0 right-0 bg-yellow-500 text-yellow-950 text-xs font-medium py-1 px-4 text-center flex items-center justify-center gap-2 shadow-sm z-10">
+            <WifiOff className="w-3 h-3" />
+            מצב לא מקוון - הנתונים יסונכרנו כשהחיבור יחזור
+          </div>
+        )}
         <div className="max-w-xl mx-auto flex items-center justify-between relative">
           <div className="flex items-center gap-2">
             {(activeTrip || isCreating) && (
