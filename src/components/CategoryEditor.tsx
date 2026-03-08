@@ -1,12 +1,80 @@
 import { useState } from 'react';
 import { Category } from '../types';
 import { ICON_MAP } from '../utils/categories';
-import { X, Check, Trash2, Plus, Pencil } from 'lucide-react';
+import { X, Check, Trash2, Plus, Pencil, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 type Props = {
   categories: Category[];
   onSave: (categories: Category[]) => void;
   onClose: () => void;
+};
+
+const SortableCategoryItem = ({ category, onEdit, onDelete }: { category: Category, onEdit: () => void, onDelete: () => void }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 1 : 0,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  const Icon = ICON_MAP[category.icon];
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
+      <div className="flex items-center gap-4">
+        <button {...attributes} {...listeners} className="p-2 text-slate-400 hover:text-slate-600 cursor-grab active:cursor-grabbing touch-none">
+          <GripVertical className="w-5 h-5" />
+        </button>
+        <div 
+          className="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-sm"
+          style={{ backgroundColor: category.color }}
+        >
+          {Icon && <Icon className="w-6 h-6" />}
+        </div>
+        <span className="font-bold text-slate-800">{category.name}</span>
+      </div>
+      <div className="flex gap-2">
+        <button 
+          onClick={onEdit}
+          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+        >
+          <Pencil className="w-5 h-5" />
+        </button>
+        <button 
+          onClick={onDelete}
+          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+        >
+          <Trash2 className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
 };
 
 const COLORS = [
@@ -25,6 +93,26 @@ export const CategoryEditor = ({ categories, onSave, onClose }: Props) => {
   const [editName, setEditName] = useState('');
   const [editIcon, setEditIcon] = useState('');
   const [editColor, setEditColor] = useState('');
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setLocalCategories((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
 
   const startEditing = (category: Category) => {
     setEditingId(category.id);
@@ -152,36 +240,25 @@ export const CategoryEditor = ({ categories, onSave, onClose }: Props) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3">
-            {localCategories.map(category => {
-              const Icon = ICON_MAP[category.icon];
-              return (
-                <div key={category.id} className="flex items-center justify-between p-4 bg-white border border-slate-100 rounded-2xl shadow-sm">
-                  <div className="flex items-center gap-4">
-                    <div 
-                      className="w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-sm"
-                      style={{ backgroundColor: category.color }}
-                    >
-                      {Icon && <Icon className="w-6 h-6" />}
-                    </div>
-                    <span className="font-bold text-slate-800">{category.name}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => startEditing(category)}
-                      className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                    >
-                      <Pencil className="w-5 h-5" />
-                    </button>
-                    <button 
-                      onClick={() => deleteCategory(category.id)}
-                      className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={localCategories.map(c => c.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {localCategories.map(category => (
+                  <SortableCategoryItem
+                    key={category.id}
+                    category={category}
+                    onEdit={() => startEditing(category)}
+                    onDelete={() => deleteCategory(category.id)}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
             
             <button 
               onClick={startNew}
