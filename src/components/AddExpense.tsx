@@ -70,6 +70,16 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
   }, [notes]);
 
   const [showCategoryEditor, setShowCategoryEditor] = useState(false);
+  const payerSectionRef = useRef<HTMLDivElement>(null);
+
+  const scrollToPayerSection = () => {
+    if (payerSectionRef.current) {
+      // Small delay to ensure any UI updates have happened
+      setTimeout(() => {
+        payerSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
+  };
 
   const [date, setDate] = useState(
     initialExpense?.date 
@@ -657,7 +667,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
 
         {/* Who Paid Section */}
         {trip.participants.length > 1 && (
-          <div>
+          <div ref={payerSectionRef} className="scroll-mt-20">
             <label className="block text-sm font-medium text-slate-700 mb-2">{isTransfer ? 'מי מעביר?' : 'מי שילם?'}</label>
             
             <Select
@@ -670,6 +680,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                   setSinglePayer(val);
                 }
               }}
+              onClick={scrollToPayerSection}
               options={[
                 ...trip.participants.map(p => ({ value: p.id, label: p.name })),
                 { value: 'MULTIPLE', label: 'מספר משתתפים' }
@@ -853,7 +864,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                               if (!isSelected) toggleBeneficiary(p.id);
                               handleSplitChange(p.id, e.target.value);
                             }}
-                            className={`w-full p-2 pl-12 pr-8 border rounded-lg text-left outline-none transition-colors ${
+                            className={`w-full p-2 ${splitMode === 'SHARES' ? 'pl-20' : 'pl-12'} pr-8 border rounded-lg text-left outline-none transition-colors ${
                               isOverLimit 
                                 ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-1 focus:ring-red-500' 
                                 : isManual && splitMode !== 'SHARES'
