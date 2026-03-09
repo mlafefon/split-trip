@@ -3,6 +3,7 @@ import { Trip, Participant, Category } from '../types';
 import { CURRENCIES, fetchExchangeRates } from '../utils/currency';
 import { DEFAULT_CATEGORIES } from '../utils/categories';
 import { X, Plus, ChevronDown, Pencil, Check, Loader2 } from 'lucide-react';
+import EmojiPicker from 'emoji-picker-react';
 import { CurrencySelect } from './CurrencySelect';
 import { ConfirmDialog } from './ConfirmDialog';
 
@@ -14,6 +15,7 @@ type Props = {
 
 export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
   const [destination, setDestination] = useState(initialTrip?.destination || '');
+  const [icon, setIcon] = useState(initialTrip?.icon || '✈️');
   const [baseCurrency, setBaseCurrency] = useState(initialTrip?.baseCurrency || 'ILS');
   const [tripCurrency, setTripCurrency] = useState(initialTrip?.tripCurrency || 'EUR');
   const [participants, setParticipants] = useState<Participant[]>(
@@ -28,11 +30,13 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
   const [editingName, setEditingName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCurrencyConfirm, setShowCurrencyConfirm] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   // If initialTrip changes (e.g. when switching trips), update state
   useEffect(() => {
     if (initialTrip) {
       setDestination(initialTrip.destination);
+      setIcon(initialTrip.icon || '✈️');
       setBaseCurrency(initialTrip.baseCurrency);
       setTripCurrency(initialTrip.tripCurrency);
       setParticipants(initialTrip.participants);
@@ -169,6 +173,7 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
     const tripData: Trip = {
       id: initialTrip?.id || crypto.randomUUID(),
       destination: destination.trim(),
+      icon,
       baseCurrency,
       tripCurrency,
       participants,
@@ -213,14 +218,38 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">יעד הטיול</label>
-          <input 
-            type="text" 
-            required
-            value={destination}
-            onChange={(e) => setDestination(e.target.value)}
-            className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
-            placeholder="לדוגמה: פריז, תאילנד..."
-          />
+          <div className="flex gap-2 relative">
+            <button
+              type="button"
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              className="w-12 h-12 flex items-center justify-center text-2xl bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors shrink-0"
+            >
+              {icon}
+            </button>
+            {showEmojiPicker && (
+              <div className="absolute top-14 right-0 z-50 shadow-xl rounded-xl">
+                <div className="fixed inset-0 z-40" onClick={() => setShowEmojiPicker(false)} />
+                <div className="relative z-50">
+                  <EmojiPicker 
+                    onEmojiClick={(emojiData) => {
+                      setIcon(emojiData.emoji);
+                      setShowEmojiPicker(false);
+                    }}
+                    width={300}
+                    height={400}
+                  />
+                </div>
+              </div>
+            )}
+            <input 
+              type="text" 
+              required
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+              className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+              placeholder="לדוגמה: פריז, תאילנד..."
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

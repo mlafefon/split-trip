@@ -33,6 +33,7 @@ export type Category = {
 export type Trip = {
   id: string;
   destination: string;
+  icon?: string;
   baseCurrency: string;
   tripCurrency: string;
   participants: Participant[];

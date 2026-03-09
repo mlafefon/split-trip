@@ -248,7 +248,7 @@ export default function App() {
               </button>
             )}
             <h1 
-              className={`text-xl font-bold truncate max-w-[200px] ${activeTrip || isCreating ? 'cursor-pointer hover:opacity-80' : ''}`}
+              className={`text-xl font-bold truncate max-w-[200px] flex items-center gap-2 ${activeTrip || isCreating ? 'cursor-pointer hover:opacity-80' : ''}`}
               onClick={() => {
                 if (activeTrip || isCreating) {
                   // Force full reset to home
@@ -261,6 +261,7 @@ export default function App() {
                 }
               }}
             >
+              {activeTrip && <span>{activeTrip.icon || '✈️'}</span>}
               {activeTrip ? activeTrip.destination : isCreating ? 'טיול חדש' : 'ניהול תקציב טיולים'}
             </h1>
           </div>

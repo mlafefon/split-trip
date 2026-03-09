@@ -60,7 +60,10 @@ export const TripList = ({ trips, archivedTrips, loadingArchived, onSelect, onCr
               onClick={() => onSelect(trip.id)}
             >
               <div className="flex justify-between items-start">
-                <h3 className="text-lg font-bold text-slate-800">{trip.destination}</h3>
+                <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                  <span className="text-2xl">{trip.icon || '✈️'}</span>
+                  {trip.destination}
+                </h3>
               </div>
               
               <div className="flex items-center gap-4 text-sm text-slate-500">
@@ -118,7 +121,10 @@ export const TripList = ({ trips, archivedTrips, loadingArchived, onSelect, onCr
                   className="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col gap-3 relative overflow-hidden"
                 >
                   <div className="flex justify-between items-start">
-                    <h3 className="text-lg font-bold text-slate-600">{trip.destination}</h3>
+                    <h3 className="text-lg font-bold text-slate-600 flex items-center gap-2">
+                      <span className="text-2xl opacity-75">{trip.icon || '✈️'}</span>
+                      {trip.destination}
+                    </h3>
                     <button 
                       onClick={() => onUnarchive(trip.id)}
                       className="text-indigo-600 hover:text-indigo-800 text-sm font-medium bg-indigo-50 px-3 py-1 rounded-lg"
