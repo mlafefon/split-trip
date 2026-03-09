@@ -237,18 +237,18 @@ export default function App() {
           </div>
         )}
         <div className="max-w-xl mx-auto flex items-center justify-between relative">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             {(activeTrip || isCreating) && (
               <button 
                 onClick={handleBack}
-                className="p-1 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                className="p-1 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors shrink-0"
                 title="חזור"
               >
                 <ChevronRight className="w-6 h-6" />
               </button>
             )}
             <h1 
-              className={`text-xl font-bold truncate max-w-[200px] flex items-center gap-2 ${activeTrip || isCreating ? 'cursor-pointer hover:opacity-80' : ''}`}
+              className={`text-xl font-bold flex items-center gap-2 min-w-0 ${activeTrip || isCreating ? 'cursor-pointer hover:opacity-80' : ''}`}
               onClick={() => {
                 if (activeTrip || isCreating) {
                   // Force full reset to home
@@ -261,12 +261,14 @@ export default function App() {
                 }
               }}
             >
-              {activeTrip && <span>{activeTrip.icon || '✈️'}</span>}
-              {activeTrip ? activeTrip.destination : isCreating ? 'טיול חדש' : 'ניהול תקציב טיולים'}
+              {activeTrip && <span className="shrink-0">{activeTrip.icon || '✈️'}</span>}
+              <span className="truncate">
+                {activeTrip ? activeTrip.destination : isCreating ? 'טיול חדש' : 'ניהול תקציב טיולים'}
+              </span>
             </h1>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {!activeTrip && !isCreating && (
               <span 
                 className="text-[10px] text-white/50 font-mono cursor-pointer select-none" 
