@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Trip, Participant, Category } from '../types';
 import { CURRENCIES, fetchExchangeRates } from '../utils/currency';
 import { DEFAULT_CATEGORIES } from '../utils/categories';
@@ -25,6 +25,15 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
     initialTrip?.categories || DEFAULT_CATEGORIES
   );
   const [notes, setNotes] = useState(initialTrip?.notes || '');
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (notesRef.current) {
+      notesRef.current.style.height = 'auto';
+      notesRef.current.style.height = `${notesRef.current.scrollHeight}px`;
+    }
+  }, [notes]);
+
   const [newParticipantName, setNewParticipantName] = useState('');
   const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
@@ -350,9 +359,11 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">הערות</label>
           <textarea
+            ref={notesRef}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none h-24"
+            rows={1}
+            className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none overflow-hidden"
             placeholder="הערות כלליות לטיול..."
           />
         </div>

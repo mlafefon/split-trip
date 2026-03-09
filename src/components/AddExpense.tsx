@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Trip, Expense, ExpenseSplit, Category } from '../types';
 import { Check, Plus, Settings, Loader2, ChevronDown, Lock, ArrowRight } from 'lucide-react';
 import { CURRENCIES, fetchExchangeRates, formatAmount } from '../utils/currency';
@@ -60,6 +60,15 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
 
   const [tag, setTag] = useState(initialExpense?.tag || initialData?.tag || (isTransfer ? 'העברה' : ''));
   const [notes, setNotes] = useState(initialExpense?.notes || initialData?.notes || '');
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (notesRef.current) {
+      notesRef.current.style.height = 'auto';
+      notesRef.current.style.height = `${notesRef.current.scrollHeight}px`;
+    }
+  }, [notes]);
+
   const [showCategoryEditor, setShowCategoryEditor] = useState(false);
 
   const [date, setDate] = useState(
@@ -887,9 +896,11 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-2">הערות</label>
           <textarea
+            ref={notesRef}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none h-24"
+            rows={1}
+            className="w-full p-3 border border-slate-200 rounded-xl outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all resize-none overflow-hidden"
             placeholder="הוסף הערות להוצאה זו..."
           />
         </div>
