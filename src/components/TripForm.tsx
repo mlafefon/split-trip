@@ -178,6 +178,7 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
       notes: notes.trim()
     };
 
+    // Don't await onSave here to prevent the form from getting stuck if offline
     onSave(tripData);
   };
 

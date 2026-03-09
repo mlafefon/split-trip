@@ -120,34 +120,38 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
   }, [tripId, isReadOnly]);
 
   const createTrip = async (trip: Trip) => {
-    // Generate edit code
-    const editCode = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const tripWithCode = { ...trip, editCode };
-
-    // 1. Save to local storage for history immediately
-    const savedIds = JSON.parse(localStorage.getItem('tripIds') || '[]');
-    if (!savedIds.includes(trip.id)) {
-      localStorage.setItem('tripIds', JSON.stringify([trip.id, ...savedIds]));
-    }
-    
-    // 2. Save token to local storage
-    const localTokens = JSON.parse(localStorage.getItem('tripTokens') || '{}');
-    localTokens[trip.id] = editCode;
-    localStorage.setItem('tripTokens', JSON.stringify(localTokens));
-
-    // 3. Optimistically update local state
-    setTrips(prev => [tripWithCode, ...prev]);
-
     try {
-      // 4. Attempt to sync with Firebase
-      await setDoc(doc(db, 'trips', trip.id), tripWithCode);
-    } catch (err) {
-      console.error('Error syncing trip to Firebase (offline?):', err);
-      // We don't throw here because we've already saved it locally
-      // The app will function offline, and sync will need to be handled later or on next reload
-    }
+      // Generate edit code
+      const editCode = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const tripWithCode = { ...trip, editCode };
 
-    return trip.id;
+      // Save ID to local storage for history
+      const savedIds = JSON.parse(localStorage.getItem('tripIds') || '[]');
+      if (!savedIds.includes(trip.id)) {
+        localStorage.setItem('tripIds', JSON.stringify([trip.id, ...savedIds]));
+      }
+      
+      // Save token to local storage
+      const localTokens = JSON.parse(localStorage.getItem('tripTokens') || '{}');
+      localTokens[trip.id] = editCode;
+      localStorage.setItem('tripTokens', JSON.stringify(localTokens));
+
+      // Optimistically update local state so we can navigate immediately
+      setTrips(prev => [tripWithCode, ...prev]);
+
+      // Create main trip document
+      // If offline, this might throw or wait depending on Firebase config.
+      // We await it, but if it fails, we catch it below.
+      await setDoc(doc(db, 'trips', trip.id), tripWithCode);
+      
+      return trip.id;
+    } catch (err) {
+      console.error('Error creating trip:', err);
+      // Even if Firebase fails (e.g., offline), we've already saved it locally.
+      // Firebase will sync it when online if persistence is enabled.
+      // We resolve the promise so the UI can proceed.
+      return trip.id;
+    }
   };
 
   const updateTrip = async (updatedTrip: Trip) => {

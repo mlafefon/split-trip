@@ -375,11 +375,15 @@ export default function App() {
 
         {isCreating ? (
           <TripForm 
-            onSave={async (trip) => {
-              await createTrip(trip);
+            onSave={(trip) => {
+              // Fire and forget the createTrip call so the UI doesn't block if offline
+              createTrip(trip).catch(error => {
+                console.error("Failed to create trip in Firebase:", error);
+              });
+              
               setIsCreating(false);
-              // Optionally navigate to the new trip immediately
-              setCurrentTripId(trip.id);
+              // Navigate to the new trip immediately
+              handleSelectTrip(trip.id);
             }} 
             onCancel={() => setIsCreating(false)} 
           />
