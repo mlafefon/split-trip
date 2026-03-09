@@ -41,30 +41,36 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
   }, [activeTab, addMode, editingExpenseId, viewingExpenseId, viewingParticipantId, isEditing]);
 
   useEffect(() => {
-    setBackHandler(() => {
-      if (addMode !== 'NONE') {
-        setAddMode('NONE');
-        setSettleDebtData(null);
-        return true;
-      }
-      if (editingExpenseId) {
-        setEditingExpenseId(null);
-        return true;
-      }
-      if (viewingExpenseId) {
-        setViewingExpenseId(null);
-        return true;
-      }
-      if (viewingParticipantId) {
-        setViewingParticipantId(null);
-        return true;
-      }
-      if (isEditing) {
-        onEditChange(false);
-        return true;
-      }
-      return false;
-    });
+    const hasModalOpen = addMode !== 'NONE' || editingExpenseId !== null || viewingExpenseId !== null || viewingParticipantId !== null || isEditing;
+
+    if (hasModalOpen) {
+      setBackHandler(() => {
+        if (addMode !== 'NONE') {
+          setAddMode('NONE');
+          setSettleDebtData(null);
+          return true;
+        }
+        if (editingExpenseId) {
+          setEditingExpenseId(null);
+          return true;
+        }
+        if (viewingExpenseId) {
+          setViewingExpenseId(null);
+          return true;
+        }
+        if (viewingParticipantId) {
+          setViewingParticipantId(null);
+          return true;
+        }
+        if (isEditing) {
+          onEditChange(false);
+          return true;
+        }
+        return false;
+      });
+    } else {
+      setBackHandler(null);
+    }
 
     return () => setBackHandler(null);
   }, [addMode, editingExpenseId, viewingExpenseId, viewingParticipantId, isEditing, setBackHandler, onEditChange]);

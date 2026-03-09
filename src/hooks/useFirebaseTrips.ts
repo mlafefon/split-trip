@@ -120,33 +120,34 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
   }, [tripId, isReadOnly]);
 
   const createTrip = async (trip: Trip) => {
-    try {
-      // Generate edit code
-      const editCode = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      const tripWithCode = { ...trip, editCode };
+    // Generate edit code
+    const editCode = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const tripWithCode = { ...trip, editCode };
 
-      // Create main trip document
-      await setDoc(doc(db, 'trips', trip.id), tripWithCode);
-      
-      // Save ID to local storage for history
-      const savedIds = JSON.parse(localStorage.getItem('tripIds') || '[]');
-      if (!savedIds.includes(trip.id)) {
-        localStorage.setItem('tripIds', JSON.stringify([trip.id, ...savedIds]));
-      }
-      
-      // Save token to local storage
-      const localTokens = JSON.parse(localStorage.getItem('tripTokens') || '{}');
-      localTokens[trip.id] = editCode;
-      localStorage.setItem('tripTokens', JSON.stringify(localTokens));
-
-      // Optimistically update local state so we can navigate immediately
-      setTrips(prev => [tripWithCode, ...prev]);
-
-      return trip.id;
-    } catch (err) {
-      console.error('Error creating trip:', err);
-      throw err;
+    // 1. Save to local storage for history immediately
+    const savedIds = JSON.parse(localStorage.getItem('tripIds') || '[]');
+    if (!savedIds.includes(trip.id)) {
+      localStorage.setItem('tripIds', JSON.stringify([trip.id, ...savedIds]));
     }
+    
+    // 2. Save token to local storage
+    const localTokens = JSON.parse(localStorage.getItem('tripTokens') || '{}');
+    localTokens[trip.id] = editCode;
+    localStorage.setItem('tripTokens', JSON.stringify(localTokens));
+
+    // 3. Optimistically update local state
+    setTrips(prev => [tripWithCode, ...prev]);
+
+    try {
+      // 4. Attempt to sync with Firebase
+      await setDoc(doc(db, 'trips', trip.id), tripWithCode);
+    } catch (err) {
+      console.error('Error syncing trip to Firebase (offline?):', err);
+      // We don't throw here because we've already saved it locally
+      // The app will function offline, and sync will need to be handled later or on next reload
+    }
+
+    return trip.id;
   };
 
   const updateTrip = async (updatedTrip: Trip) => {

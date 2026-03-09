@@ -182,6 +182,11 @@ export default function App() {
   };
 
   const handleBack = () => {
+    if (isCreating) {
+      setIsCreating(false);
+      return;
+    }
+    
     window.history.back();
   };
 
@@ -235,6 +240,7 @@ export default function App() {
                 if (activeTrip || isCreating) {
                   // Force full reset to home
                   if (backHandler) setBackHandler(null);
+                  modalHistoryPushed.current = false;
                   window.history.pushState({}, '', window.location.pathname);
                   setUrlTripId(null);
                   setCurrentTripId(null);
@@ -300,6 +306,7 @@ export default function App() {
                         setIsMenuOpen(false); 
                         archiveTrip(activeTrip.id);
                         if (backHandler) setBackHandler(null);
+                        modalHistoryPushed.current = false;
                         window.history.pushState({}, '', window.location.pathname);
                         setUrlTripId(null);
                         setCurrentTripId(null);
@@ -344,6 +351,7 @@ export default function App() {
               deleteTrip(activeTrip.id);
               setShowDeleteConfirm(false);
               if (backHandler) setBackHandler(null);
+              modalHistoryPushed.current = false;
               window.history.pushState({}, '', window.location.pathname);
               setUrlTripId(null);
               setCurrentTripId(null);
