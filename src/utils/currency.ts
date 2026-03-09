@@ -146,7 +146,6 @@ export const CURRENCIES = [
   { code: 'STN', name: 'סאו טומה ופרינסיפה - דוברה', countryCode: 'st' },
   { code: 'SYP', name: 'סוריה - לירה', countryCode: 'sy' },
   { code: 'SZL', name: 'אסוואטיני - לילנגני', countryCode: 'sz' },
-  { code: 'THB', name: 'תאילנד - בהט', countryCode: 'th' },
   { code: 'TJS', name: 'טג\'יקיסטן - סומוני', countryCode: 'tj' },
   { code: 'TMT', name: 'טורקמניסטן - מנאט', countryCode: 'tm' },
   { code: 'TND', name: 'תוניסיה - דינר', countryCode: 'tn' },
