@@ -187,7 +187,20 @@ export default function App() {
       return;
     }
     
-    window.history.back();
+    // If we have a backHandler (modal open), let history.back() trigger popstate to close it
+    if (backHandler) {
+      window.history.back();
+      return;
+    }
+
+    // If we are viewing a trip, we want to go back to the list.
+    // If the user opened the app via a direct link to a trip, window.history.length might be small (e.g., 1 or 2).
+    // Using history.back() in that case would exit the app.
+    // To prevent exiting the app, we can just clear the URL state manually and push the root URL.
+    modalHistoryPushed.current = false;
+    window.history.pushState({}, '', window.location.pathname);
+    setUrlTripId(null);
+    setCurrentTripId(null);
   };
 
   const handleSetBackHandler = useCallback((handler: (() => boolean) | null) => {
