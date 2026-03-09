@@ -115,8 +115,7 @@ export const CurrencySelect = ({ value, onChange, label, className = '', short =
                     <span className="truncate">{c.name}</span>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <img
-                        src={`https://flagcdn.com/w40/${c.countryCode}.png`}
-                        srcSet={`https://flagcdn.com/w80/${c.countryCode}.png 2x`}
+                        src={`https://flagcdn.com/${c.countryCode}.svg`}
                         width="24"
                         height="18"
                         alt={c.countryCode}
