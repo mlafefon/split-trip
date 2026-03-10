@@ -3,14 +3,16 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label, BarChart, Bar
 import { Download, Printer } from 'lucide-react';
 import { ICON_MAP } from '../utils/categories';
 import { formatAmount } from '../utils/currency';
+import { getParticipantName, formatParticipantName } from '../utils/participants';
 
 type Props = {
   trip: Trip;
+  currentUserId?: string | null;
 };
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ffc658', '#8dd1e1'];
 
-export const Statistics = ({ trip }: Props) => {
+export const Statistics = ({ trip, currentUserId }: Props) => {
   // Calculate Category Data (excluding transfers)
   const categoryTotals: Record<string, number> = {};
   let totalCategoryExpenses = 0;
@@ -61,7 +63,7 @@ export const Statistics = ({ trip }: Props) => {
       return sum;
     }, 0);
     return {
-      name: p.name,
+      name: formatParticipantName(p.name, p.id === currentUserId),
       value: total
     };
   }).filter(d => d.value > 0);
@@ -78,12 +80,12 @@ export const Statistics = ({ trip }: Props) => {
       const year = dateObj.getFullYear();
       const date = `${day}/${month}/${year}`;
       const payers = e.payers.map(p => {
-        const name = trip.participants.find(part => part.id === p.participantId)?.name || 'Unknown';
+        const name = getParticipantName(p.participantId, trip.participants, currentUserId);
         return `${name} (${formatAmount(p.amount)})`;
       }).join(', ');
       
       const beneficiaries = e.splits.map(s => {
-        const name = trip.participants.find(part => part.id === s.participantId)?.name || 'Unknown';
+        const name = getParticipantName(s.participantId, trip.participants, currentUserId);
         return `${name} (${formatAmount(s.amount)})`;
       }).join(', ');
 

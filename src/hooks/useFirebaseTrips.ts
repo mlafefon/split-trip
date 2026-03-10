@@ -67,7 +67,9 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
 
   // Subscribe to a specific trip if ID is provided
   useEffect(() => {
-    if (!tripId) return;
+    if (!tripId) {
+      return;
+    }
 
     setLoading(true);
     const unsubscribe = onSnapshot(doc(db, 'trips', tripId), (doc) => {
@@ -135,6 +137,13 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
       const localTokens = JSON.parse(localStorage.getItem('tripTokens') || '{}');
       localTokens[trip.id] = editCode;
       localStorage.setItem('tripTokens', JSON.stringify(localTokens));
+
+      // Save current user (creator) to local storage
+      if (trip.participants.length > 0) {
+        const currentUserIds = JSON.parse(localStorage.getItem('tripCurrentUser') || '{}');
+        currentUserIds[trip.id] = trip.participants[0].id;
+        localStorage.setItem('tripCurrentUser', JSON.stringify(currentUserIds));
+      }
 
       // Optimistically update local state so we can navigate immediately
       setTrips(prev => [tripWithCode, ...prev]);

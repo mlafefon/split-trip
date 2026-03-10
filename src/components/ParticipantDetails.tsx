@@ -2,20 +2,20 @@ import { Trip, Expense } from '../types';
 import { ArrowRight, ArrowRightLeft, Receipt, ChevronLeft } from 'lucide-react';
 import { formatAmount } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
+import { getParticipantName, formatParticipantName } from '../utils/participants';
 
 type Props = {
   trip: Trip;
   participantId: string;
   onClose: () => void;
   onSelectExpense: (expenseId: string) => void;
+  currentUserId?: string | null;
 };
 
-export const ParticipantDetails = ({ trip, participantId, onClose, onSelectExpense }: Props) => {
+export const ParticipantDetails = ({ trip, participantId, onClose, onSelectExpense, currentUserId }: Props) => {
   const participant = trip.participants.find(p => p.id === participantId);
 
   if (!participant) return null;
-
-  const getParticipantName = (id: string) => trip.participants.find(p => p.id === id)?.name || 'לא ידוע';
 
   const transactions = trip.expenses.map(expense => {
     // Calculate how much this participant paid
@@ -42,7 +42,7 @@ export const ParticipantDetails = ({ trip, participantId, onClose, onSelectExpen
       // Who paid?
       const otherPayers = payers
         .filter(p => p.participantId !== participantId)
-        .map(p => getParticipantName(p.participantId));
+        .map(p => getParticipantName(p.participantId, trip.participants, currentUserId));
       
       if (otherPayers.length > 0) {
         details = `שולם ע"י ${otherPayers.join(', ')}`;
@@ -56,7 +56,7 @@ export const ParticipantDetails = ({ trip, participantId, onClose, onSelectExpen
       // We can list the other splitters.
       const otherSplitters = expense.splits
         .filter(s => s.participantId !== participantId)
-        .map(s => getParticipantName(s.participantId));
+        .map(s => getParticipantName(s.participantId, trip.participants, currentUserId));
       
       if (otherSplitters.length > 0) {
         details = `עבור ${otherSplitters.join(', ')}`;
@@ -79,7 +79,7 @@ export const ParticipantDetails = ({ trip, participantId, onClose, onSelectExpen
   return (
     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative">
       <div className="flex flex-col items-center mb-6 mt-2">
-        <h2 className="text-2xl font-bold text-slate-800 text-center">{participant.name}</h2>
+        <h2 className="text-2xl font-bold text-slate-800 text-center">{formatParticipantName(participant.name, participant.id === currentUserId)}</h2>
         <div className={`text-3xl font-bold mt-2 ${totalBalance >= 0 ? 'text-emerald-600' : 'text-red-500'}`} dir="ltr">
           {totalBalance >= 0 ? '+' : ''}{formatAmount(Math.abs(totalBalance))} {trip.tripCurrency}
         </div>

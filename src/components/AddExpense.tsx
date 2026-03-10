@@ -15,9 +15,10 @@ type Props = {
   onCancel: () => void;
   onUpdateCategories: (categories: Category[]) => void;
   defaultMode?: 'EXPENSE' | 'TRANSFER';
+  currentUserId?: string | null;
 };
 
-export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel, onUpdateCategories, defaultMode = 'EXPENSE' }: Props) => {
+export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel, onUpdateCategories, defaultMode = 'EXPENSE', currentUserId }: Props) => {
   const isTransfer = defaultMode === 'TRANSFER' || initialExpense?.tag === 'העברה' || initialData?.tag === 'העברה';
   
   const [description, setDescription] = useState(initialExpense?.description || initialData?.description || (isTransfer ? 'העברה' : ''));
@@ -96,7 +97,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
       ? trip.participants[0].id
       : (initialExpense?.payers && initialExpense.payers.length === 1) 
         ? initialExpense.payers[0].participantId 
-        : (initialExpense as any)?.paidBy || (initialData?.payers?.[0]?.participantId || '')
+        : (initialExpense as any)?.paidBy || (initialData?.payers?.[0]?.participantId || (currentUserId !== 'none' ? currentUserId : '') || '')
   );
   const [multiPayers, setMultiPayers] = useState<Record<string, string>>({});
 

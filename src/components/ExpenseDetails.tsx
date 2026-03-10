@@ -2,6 +2,7 @@ import { Trip, Expense } from '../types';
 import { ICON_MAP } from '../utils/categories';
 import { ArrowRightLeft, Pencil, Trash2, ArrowRight, Calendar, User, Users, FileText } from 'lucide-react';
 import { formatAmount } from '../utils/currency';
+import { getParticipantName } from '../utils/participants';
 
 type Props = {
   trip: Trip;
@@ -10,9 +11,10 @@ type Props = {
   onDelete: () => void;
   onClose: () => void;
   isReadOnly?: boolean;
+  currentUserId?: string | null;
 };
 
-export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isReadOnly = false }: Props) => {
+export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isReadOnly = false, currentUserId }: Props) => {
   const category = trip.categories.find(c => c.name === expense.tag);
   let Icon = category ? ICON_MAP[category.icon] : null;
   let iconColor = category?.color;
@@ -21,8 +23,6 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
     Icon = ArrowRightLeft;
     iconColor = '#f97316'; // orange-500
   }
-
-  const getParticipantName = (id: string) => trip.participants.find(p => p.id === id)?.name || 'לא ידוע';
 
   // Normalize payers for display
   const payers = expense.payers || 
@@ -63,7 +63,7 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
             <div className="bg-slate-50 rounded-xl p-4 space-y-2">
               {payers.map((payer, idx) => (
                 <div key={idx} className="flex justify-between items-center">
-                  <span className="text-slate-700 font-medium">{getParticipantName(payer.participantId)}</span>
+                  <span className="text-slate-700 font-medium">{getParticipantName(payer.participantId, trip.participants, currentUserId)}</span>
                   <span className="text-slate-600" dir="ltr">{formatAmount(payer.amount)} {trip.tripCurrency}</span>
                 </div>
               ))}
@@ -81,7 +81,7 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
             <div className="bg-slate-50 rounded-xl p-4 space-y-2">
               {expense.splits.map((split, idx) => (
                 <div key={idx} className="flex justify-between items-center">
-                  <span className="text-slate-700 font-medium">{getParticipantName(split.participantId)}</span>
+                  <span className="text-slate-700 font-medium">{getParticipantName(split.participantId, trip.participants, currentUserId)}</span>
                   <span className="text-slate-600" dir="ltr">{formatAmount(split.amount)} {trip.tripCurrency}</span>
                 </div>
               ))}

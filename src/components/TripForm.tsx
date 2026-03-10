@@ -11,9 +11,11 @@ type Props = {
   initialTrip?: Trip;
   onSave: (trip: Trip) => void;
   onCancel: () => void;
+  currentUserId?: string | null;
+  setCurrentUserId?: (id: string | null) => void;
 };
 
-export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
+export const TripForm = ({ initialTrip, onSave, onCancel, currentUserId, setCurrentUserId }: Props) => {
   const [destination, setDestination] = useState(initialTrip?.destination || '');
   const [icon, setIcon] = useState(initialTrip?.icon || '✈️');
   const [baseCurrency, setBaseCurrency] = useState(initialTrip?.baseCurrency || 'ILS');
@@ -40,6 +42,7 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCurrencyConfirm, setShowCurrencyConfirm] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [localCurrentUserId, setLocalCurrentUserId] = useState<string | null>(currentUserId || null);
 
   // If initialTrip changes (e.g. when switching trips), update state
   useEffect(() => {
@@ -51,8 +54,9 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
       setParticipants(initialTrip.participants);
       setCategories(initialTrip.categories);
       setNotes(initialTrip.notes || '');
+      setLocalCurrentUserId(currentUserId || null);
     }
-  }, [initialTrip]);
+  }, [initialTrip, currentUserId]);
 
   const handleAddParticipant = () => {
     if (newParticipantName.trim()) {
@@ -189,8 +193,23 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
       expenses: updatedExpenses,
       categories: categories,
       createdAt: initialTrip?.createdAt || new Date().toISOString(),
-      notes: notes.trim()
+      notes: notes.trim(),
+      activityLog: initialTrip?.activityLog || []
     };
+
+    if (!initialTrip && participants.length > 0) {
+      tripData.activityLog = [{
+        id: crypto.randomUUID(),
+        participantId: participants[0].id,
+        action: 'CREATE_TRIP',
+        timestamp: new Date().toISOString(),
+        details: 'יצר/ה את הטיול'
+      }];
+    }
+
+    if (initialTrip && setCurrentUserId) {
+      setCurrentUserId(localCurrentUserId);
+    }
 
     // Don't await onSave here to prevent the form from getting stuck if offline
     onSave(tripData);
@@ -291,7 +310,7 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
                 }
               }}
               className="flex-1 p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
-              placeholder="שם המשתתף..."
+              placeholder={participants.length === 0 ? "השם שלי..." : "שם המשתתף..."}
             />
             <button 
               type="button"
@@ -355,6 +374,23 @@ export const TripForm = ({ initialTrip, onSave, onCancel }: Props) => {
             ))}
           </div>
         </div>
+
+        {initialTrip && setCurrentUserId && (
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-slate-700">מי אתה?</label>
+            <select
+              value={localCurrentUserId || ''}
+              onChange={(e) => setLocalCurrentUserId(e.target.value || null)}
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+            >
+              <option value="" disabled>בחר משתתף...</option>
+              <option value="none">אף אחד (צופה בלבד)</option>
+              {participants.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">הערות</label>

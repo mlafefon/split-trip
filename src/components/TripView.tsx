@@ -6,10 +6,11 @@ import { Balances } from './Balances';
 import { Statistics } from './Statistics';
 import { ExpenseDetails } from './ExpenseDetails';
 import { ParticipantDetails } from './ParticipantDetails';
-import { Receipt, Users, BarChart3, Plus, Trash2, Pencil, Loader2, ArrowRightLeft, Search, X, ChevronLeft } from 'lucide-react';
+import { Receipt, Users, BarChart3, Plus, Trash2, Pencil, Loader2, ArrowRightLeft, Search, X, ChevronLeft, Activity } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { fetchExchangeRates, formatAmount } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
+import { getParticipantName } from '../utils/participants';
 
 type Props = {
   trip: Trip;
@@ -18,18 +19,32 @@ type Props = {
   isReadOnly?: boolean;
   isEditing: boolean;
   onEditChange: (isEditing: boolean) => void;
+  currentUserId: string | null;
+  setCurrentUserId: (id: string | null) => void;
+  initialViewingExpenseId?: string | null;
+  onClearInitialViewingExpenseId?: () => void;
 };
 
 type Tab = 'EXPENSES' | 'BALANCES' | 'STATISTICS';
 
-export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false, isEditing, onEditChange }: Props) => {
+export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false, isEditing, onEditChange, currentUserId, setCurrentUserId, initialViewingExpenseId, onClearInitialViewingExpenseId }: Props) => {
   const [activeTab, setActiveTab] = useState<Tab>('EXPENSES');
   const [addMode, setAddMode] = useState<'NONE' | 'EXPENSE' | 'TRANSFER'>('NONE');
   const [showMenu, setShowMenu] = useState(false);
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
-  const [viewingExpenseId, setViewingExpenseId] = useState<string | null>(null);
+  const [viewingExpenseId, setViewingExpenseId] = useState<string | null>(initialViewingExpenseId || null);
   const [viewingParticipantId, setViewingParticipantId] = useState<string | null>(null);
   const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialViewingExpenseId) {
+      setViewingExpenseId(initialViewingExpenseId);
+      setActiveTab('EXPENSES');
+      if (onClearInitialViewingExpenseId) {
+        onClearInitialViewingExpenseId();
+      }
+    }
+  }, [initialViewingExpenseId, onClearInitialViewingExpenseId]);
   // isEditing state removed
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [isFetchingRate, setIsFetchingRate] = useState(false);
@@ -94,7 +109,18 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
   const handleAddExpense = (expense: Expense) => {
     updateTrip({
       ...trip,
-      expenses: [...trip.expenses, expense]
+      expenses: [...trip.expenses, expense],
+      activityLog: [
+        ...(trip.activityLog || []),
+        {
+          id: crypto.randomUUID(),
+          participantId: currentUserId || trip.participants[0].id,
+          action: 'ADD_EXPENSE',
+          timestamp: new Date().toISOString(),
+          details: `הוסיף/ה הוצאה: ${expense.description}`,
+          entityId: expense.id
+        }
+      ]
     });
     setAddMode('NONE');
     setSettleDebtData(null);
@@ -103,7 +129,18 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
   const handleUpdateExpense = (updatedExpense: Expense) => {
     updateTrip({
       ...trip,
-      expenses: trip.expenses.map(e => e.id === updatedExpense.id ? updatedExpense : e)
+      expenses: trip.expenses.map(e => e.id === updatedExpense.id ? updatedExpense : e),
+      activityLog: [
+        ...(trip.activityLog || []),
+        {
+          id: crypto.randomUUID(),
+          participantId: currentUserId || trip.participants[0].id,
+          action: 'UPDATE_EXPENSE',
+          timestamp: new Date().toISOString(),
+          details: `עדכן/ה הוצאה: ${updatedExpense.description}`,
+          entityId: updatedExpense.id
+        }
+      ]
     });
     setEditingExpenseId(null);
   };
@@ -111,12 +148,34 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
   const handleUpdateCategories = (categories: Category[]) => {
     updateTrip({
       ...trip,
-      categories
+      categories,
+      activityLog: [
+        ...(trip.activityLog || []),
+        {
+          id: crypto.randomUUID(),
+          participantId: currentUserId || trip.participants[0].id,
+          action: 'UPDATE_TRIP',
+          timestamp: new Date().toISOString(),
+          details: `עדכן/ה את קטגוריות הטיול`
+        }
+      ]
     });
   };
 
   const handleUpdateTrip = (updatedTrip: Trip) => {
-    updateTrip(updatedTrip);
+    updateTrip({
+      ...updatedTrip,
+      activityLog: [
+        ...(updatedTrip.activityLog || []),
+        {
+          id: crypto.randomUUID(),
+          participantId: currentUserId || updatedTrip.participants[0].id,
+          action: 'UPDATE_TRIP',
+          timestamp: new Date().toISOString(),
+          details: `עדכן/ה את פרטי הטיול`
+        }
+      ]
+    });
     onEditChange(false);
   };
 
@@ -126,9 +185,20 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
 
   const confirmDeleteExpense = () => {
     if (deleteExpenseId) {
+      const expenseToDelete = trip.expenses.find(e => e.id === deleteExpenseId);
       updateTrip({
         ...trip,
-        expenses: trip.expenses.filter(e => e.id !== deleteExpenseId)
+        expenses: trip.expenses.filter(e => e.id !== deleteExpenseId),
+        activityLog: [
+          ...(trip.activityLog || []),
+          {
+            id: crypto.randomUUID(),
+            participantId: currentUserId || trip.participants[0].id,
+            action: 'DELETE_EXPENSE',
+            timestamp: new Date().toISOString(),
+            details: `מחק/ה הוצאה: ${expenseToDelete?.description || ''}`
+          }
+        ]
       });
       setDeleteExpenseId(null);
     }
@@ -168,6 +238,8 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
         initialTrip={trip}
         onSave={handleUpdateTrip}
         onCancel={() => onEditChange(false)}
+        currentUserId={currentUserId}
+        setCurrentUserId={setCurrentUserId}
       />
     );
   }
@@ -179,6 +251,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
         onSave={handleAddExpense} 
         onCancel={() => setAddMode('NONE')} 
         onUpdateCategories={handleUpdateCategories}
+        currentUserId={currentUserId}
       />
     );
   }
@@ -205,6 +278,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
         onUpdateCategories={handleUpdateCategories}
         defaultMode="TRANSFER"
         initialData={initialData}
+        currentUserId={currentUserId}
       />
     );
   }
@@ -219,6 +293,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
           onSave={handleUpdateExpense} 
           onCancel={() => setEditingExpenseId(null)} 
           onUpdateCategories={handleUpdateCategories}
+          currentUserId={currentUserId}
         />
       );
     }
@@ -241,6 +316,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
           }}
           onClose={() => setViewingExpenseId(null)}
           isReadOnly={isReadOnly}
+          currentUserId={currentUserId}
         />
       );
     }
@@ -253,6 +329,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
         participantId={viewingParticipantId}
         onClose={() => setViewingParticipantId(null)}
         onSelectExpense={setViewingExpenseId}
+        currentUserId={currentUserId}
       />
     );
   }
@@ -266,6 +343,39 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
         onConfirm={confirmDeleteExpense}
         onCancel={() => setDeleteExpenseId(null)}
       />
+
+      {/* User Identification Modal */}
+      {!isReadOnly && !currentUserId && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-xl">
+            <div className="flex justify-center mb-4">
+              <div className="p-3 bg-indigo-100 rounded-full">
+                <Users className="w-8 h-8 text-indigo-600" />
+              </div>
+            </div>
+            <h2 className="text-xl font-bold text-center text-slate-800 mb-2">ברוך הבא לטיול!</h2>
+            <p className="text-center text-slate-500 mb-6">אנא בחר מי אתה מתוך רשימת המשתתפים כדי שתוכל להוסיף הוצאות.</p>
+            
+            <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+              {trip.participants.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => setCurrentUserId(p.id)}
+                  className="w-full p-4 text-right bg-slate-50 hover:bg-indigo-50 rounded-xl font-medium text-slate-700 hover:text-indigo-700 transition-colors border border-slate-100 hover:border-indigo-200"
+                >
+                  {p.name}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentUserId('none')}
+                className="w-full p-4 text-center bg-transparent hover:bg-slate-100 rounded-xl font-medium text-slate-500 transition-colors mt-2"
+              >
+                אף אחד (צופה בלבד)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Summary Card */}
       <div className="bg-gradient-to-br from-indigo-600 to-violet-600 rounded-3xl p-6 text-white shadow-lg relative">
@@ -357,7 +467,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
                   const payers = expense.payers || 
                     ((expense as any).paidBy ? [{ participantId: (expense as any).paidBy, amount: expense.amount }] : []);
                   
-                  const payerNames = payers.map(p => trip.participants.find(part => part.id === p.participantId)?.name || 'לא ידוע');
+                  const payerNames = payers.map(p => getParticipantName(p.participantId, trip.participants, currentUserId));
                   const payerText = payerNames.length > 1 
                     ? `${payerNames.length} משתתפים` 
                     : payerNames[0] || 'לא ידוע';
@@ -459,6 +569,10 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
                 
                 <button 
                   onClick={() => {
+                    if (!currentUserId || currentUserId === 'none') {
+                      alert('אנא בחר מי אתה (בעריכת הטיול) לפני הוספת הוצאה.');
+                      return;
+                    }
                     if (trip.participants.length === 1) {
                       setAddMode('EXPENSE');
                     } else {
@@ -480,11 +594,12 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
             exchangeRate={exchangeRate} 
             onSelectParticipant={setViewingParticipantId}
             onSettleDebt={!isReadOnly ? handleSettleDebt : undefined}
+            currentUserId={currentUserId}
           />
         )}
 
         {activeTab === 'STATISTICS' && (
-          <Statistics trip={trip} />
+          <Statistics trip={trip} currentUserId={currentUserId} />
         )}
       </div>
     </div>

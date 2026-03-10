@@ -1,13 +1,14 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { TripList } from './components/TripList';
 import { TripView } from './components/TripView';
 import { TripForm } from './components/TripForm';
 import { useFirebaseTrips } from './hooks/useFirebaseTrips';
-import { ChevronRight, Loader2, Share2, Pencil, WifiOff, MoreVertical, Archive, Trash2, Tags } from 'lucide-react';
+import { ChevronRight, Loader2, Share2, Pencil, WifiOff, MoreVertical, Archive, Trash2, Tags, Activity } from 'lucide-react';
 import { ShareDialog } from './components/ShareDialog';
 import { InstallPrompt } from './components/InstallPrompt';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { CategoryEditor } from './components/CategoryEditor';
+import { ActivityLog } from './components/ActivityLog';
 import metadata from '../metadata.json';
 
 import { ExportReport } from './components/ExportReport';
@@ -20,6 +21,8 @@ export default function App() {
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [isEditingTrip, setIsEditingTrip] = useState(false);
   const [isEditingCategories, setIsEditingCategories] = useState(false);
+  const [isViewingActivity, setIsViewingActivity] = useState(false);
+  const [viewingExpenseIdFromActivity, setViewingExpenseIdFromActivity] = useState<string | null>(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -84,9 +87,50 @@ export default function App() {
   const [currentTripId, setCurrentTripId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [backHandler, setBackHandler] = useState<(() => boolean) | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // If we have a URL trip ID, that's our current trip
   const activeTrip = urlTripId ? firebaseTrip : trips.find(t => t.id === currentTripId);
+
+  // Manage current user ID for the active trip
+  useLayoutEffect(() => {
+    if (activeTrip) {
+      const currentUserIds = JSON.parse(localStorage.getItem('tripCurrentUser') || '{}');
+      const savedUserId = currentUserIds[activeTrip.id];
+      
+      // Validate saved user ID against current participants
+      if (savedUserId && (savedUserId === 'none' || activeTrip.participants.some(p => p.id === savedUserId))) {
+        if (currentUserId !== savedUserId) {
+          setCurrentUserId(savedUserId);
+        }
+      } else {
+        if (currentUserId !== null) {
+          setCurrentUserId(null);
+        }
+        if (savedUserId) {
+          // Clean up invalid ID
+          delete currentUserIds[activeTrip.id];
+          localStorage.setItem('tripCurrentUser', JSON.stringify(currentUserIds));
+        }
+      }
+    } else {
+      if (currentUserId !== null) {
+        setCurrentUserId(null);
+      }
+    }
+  }, [activeTrip, currentUserId]);
+
+  const handleSetCurrentUserId = (userId: string | null) => {
+    if (!activeTrip) return;
+    setCurrentUserId(userId);
+    const currentUserIds = JSON.parse(localStorage.getItem('tripCurrentUser') || '{}');
+    if (userId) {
+      currentUserIds[activeTrip.id] = userId;
+    } else {
+      delete currentUserIds[activeTrip.id];
+    }
+    localStorage.setItem('tripCurrentUser', JSON.stringify(currentUserIds));
+  };
 
   // Calculate canEdit for the active trip (whether from URL or local list)
   const activeTripCanEdit = (() => {
@@ -207,6 +251,22 @@ export default function App() {
     setBackHandler(() => handler);
   }, []);
 
+  useEffect(() => {
+    if (isEditingCategories) {
+      handleSetBackHandler(() => {
+        setIsEditingCategories(false);
+        return true;
+      });
+    } else if (isViewingActivity) {
+      handleSetBackHandler(() => {
+        setIsViewingActivity(false);
+        return true;
+      });
+    } else {
+      handleSetBackHandler(null);
+    }
+  }, [isEditingCategories, isViewingActivity, handleSetBackHandler]);
+
   const handleShare = () => {
     if (!activeTrip) return;
     setShowShareDialog(true);
@@ -314,6 +374,13 @@ export default function App() {
                           <Tags className="w-4 h-4 text-slate-500" />
                           עריכת קטגוריות
                         </button>
+                        <button 
+                          onClick={() => { setIsMenuOpen(false); setIsViewingActivity(true); }}
+                          className="w-full text-right px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm"
+                        >
+                          <Activity className="w-4 h-4 text-slate-500" />
+                          פעילות
+                        </button>
                       </>
                     )}
                     
@@ -394,10 +461,33 @@ export default function App() {
           <CategoryEditor
             categories={activeTrip.categories}
             onSave={async (newCategories) => {
-              await updateTrip({ ...activeTrip, categories: newCategories });
+              await updateTrip({ 
+                ...activeTrip, 
+                categories: newCategories,
+                activityLog: [
+                  ...(activeTrip.activityLog || []),
+                  {
+                    id: crypto.randomUUID(),
+                    participantId: currentUserId || activeTrip.participants[0].id,
+                    action: 'UPDATE_TRIP',
+                    timestamp: new Date().toISOString(),
+                    details: `עדכן/ה את קטגוריות הטיול`
+                  }
+                ]
+              });
               setIsEditingCategories(false);
             }}
             onClose={() => setIsEditingCategories(false)}
+          />
+        ) : activeTrip && isViewingActivity ? (
+          <ActivityLog
+            trip={activeTrip}
+            onClose={() => setIsViewingActivity(false)}
+            currentUserId={currentUserId}
+            onExpenseClick={(expenseId) => {
+              setViewingExpenseIdFromActivity(expenseId);
+              setIsViewingActivity(false);
+            }}
           />
         ) : activeTrip ? (
           <>
@@ -408,6 +498,10 @@ export default function App() {
               isReadOnly={!activeTripCanEdit}
               isEditing={isEditingTrip}
               onEditChange={setIsEditingTrip}
+              currentUserId={currentUserId}
+              setCurrentUserId={handleSetCurrentUserId}
+              initialViewingExpenseId={viewingExpenseIdFromActivity}
+              onClearInitialViewingExpenseId={() => setViewingExpenseIdFromActivity(null)}
             />
             <ShareDialog 
               isOpen={showShareDialog}
