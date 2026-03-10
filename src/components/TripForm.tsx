@@ -60,6 +60,10 @@ export const TripForm = ({ initialTrip, onSave, onCancel, currentUserId, setCurr
 
   const handleAddParticipant = () => {
     if (newParticipantName.trim()) {
+      if (participants.some(p => p.name.trim().toLowerCase() === newParticipantName.trim().toLowerCase())) {
+        alert('משתתף עם שם זה כבר קיים.');
+        return;
+      }
       setParticipants([...participants, { id: crypto.randomUUID(), name: newParticipantName.trim() }]);
       setNewParticipantName('');
     }
@@ -93,6 +97,10 @@ export const TripForm = ({ initialTrip, onSave, onCancel, currentUserId, setCurr
 
   const saveParticipantName = () => {
     if (editingParticipantId && editingName.trim()) {
+      if (participants.some(p => p.id !== editingParticipantId && p.name.trim().toLowerCase() === editingName.trim().toLowerCase())) {
+        alert('משתתף עם שם זה כבר קיים.');
+        return;
+      }
       setParticipants(participants.map(p => 
         p.id === editingParticipantId ? { ...p, name: editingName.trim() } : p
       ));

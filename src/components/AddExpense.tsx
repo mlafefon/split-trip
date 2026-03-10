@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Trip, Expense, ExpenseSplit, Category } from '../types';
-import { Check, Plus, Settings, Loader2, ChevronDown, Lock, ArrowRight } from 'lucide-react';
+import { Check, Plus, Settings, Loader2, ChevronDown, Lock, ArrowRight, Tag } from 'lucide-react';
 import { CURRENCIES, fetchExchangeRates, formatAmount } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
 import { CategoryEditor } from './CategoryEditor';
@@ -71,7 +71,22 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
   }, [notes]);
 
   const [showCategoryEditor, setShowCategoryEditor] = useState(false);
+  const [showCategorySelect, setShowCategorySelect] = useState(false);
   const payerSectionRef = useRef<HTMLDivElement>(null);
+  const categorySelectRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categorySelectRef.current && !categorySelectRef.current.contains(event.target as Node)) {
+        setShowCategorySelect(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const selectedCategory = trip.categories.find(c => c.name === tag);
+  const SelectedIcon = selectedCategory ? ICON_MAP[selectedCategory.icon] : null;
 
   const scrollToPayerSection = () => {
     if (payerSectionRef.current) {
@@ -568,54 +583,72 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
         {/* Basic Info */}
         <div className="space-y-4">
           {!isTransfer && (
-            <div>
-              <div className="flex gap-2 overflow-x-auto p-2 scrollbar-hide">
-                {trip.categories.map(cat => {
-                  const Icon = ICON_MAP[cat.icon];
-                  const isSelected = tag === cat.name;
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setTag(cat.name)}
-                      className={`flex flex-col items-center gap-1 p-1 rounded-xl transition-all ${isSelected ? 'scale-110' : 'opacity-70 hover:opacity-100'}`}
-                      title={cat.name}
-                    >
-                      <div 
-                        className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm transition-transform ${isSelected ? 'ring-2 ring-offset-2 ring-indigo-500' : ''}`}
-                        style={{ backgroundColor: cat.color }}
-                      >
-                        {Icon && <Icon className="w-5 h-5" />}
-                      </div>
-                    </button>
-                  );
-                })}
-                
+            <div className="flex items-center gap-4">
+              <div className="relative" ref={categorySelectRef}>
+                <label className="block text-sm font-medium text-slate-700 mb-1">קטגוריה</label>
                 <button
                   type="button"
-                  onClick={() => setShowCategoryEditor(true)}
-                  className="flex flex-col items-center gap-1 p-1 rounded-xl hover:bg-slate-50 opacity-70 hover:opacity-100 transition-all"
-                  title="ערוך קטגוריות"
+                  onClick={() => setShowCategorySelect(!showCategorySelect)}
+                  className="w-[52px] h-[52px] rounded-xl flex items-center justify-center text-white shadow-sm transition-transform hover:scale-105 border border-slate-200"
+                  style={{ backgroundColor: selectedCategory?.color || '#f1f5f9' }}
                 >
-                  <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 shadow-sm">
-                    <Plus className="w-5 h-5" />
-                  </div>
+                  {SelectedIcon ? (
+                    <SelectedIcon className="w-6 h-6" />
+                  ) : (
+                    <Tag className="w-6 h-6 text-slate-500" />
+                  )}
                 </button>
+
+                {showCategorySelect && (
+                  <div className="absolute z-50 mt-2 w-64 bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 max-h-80 overflow-y-auto">
+                    {trip.categories.map(cat => {
+                      const Icon = ICON_MAP[cat.icon];
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            setTag(cat.name);
+                            setShowCategorySelect(false);
+                          }}
+                          className={`w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-slate-50 transition-colors ${tag === cat.name ? 'bg-indigo-50' : ''}`}
+                        >
+                          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: cat.color }}>
+                            {Icon && <Icon className="w-4 h-4" />}
+                          </div>
+                          <span className="font-medium text-slate-700">{cat.name}</span>
+                        </button>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCategoryEditor(true);
+                        setShowCategorySelect(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-slate-50 transition-colors border-t border-slate-100"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500">
+                        <Settings className="w-4 h-4" />
+                      </div>
+                      <span className="font-medium text-slate-700">ערוך קטגוריות</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">תיאור</label>
+                <input 
+                  type="text" 
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  disabled={isTransfer}
+                  className={`w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none ${isTransfer ? 'bg-slate-50 text-slate-500' : ''}`}
+                  placeholder={tag || "לדוגמה: ארוחת ערב, מונית..."}
+                />
               </div>
             </div>
           )}
-
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">תיאור</label>
-            <input 
-              type="text" 
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              disabled={isTransfer}
-              className={`w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none ${isTransfer ? 'bg-slate-50 text-slate-500' : ''}`}
-              placeholder={tag || "לדוגמה: ארוחת ערב, מונית..."}
-            />
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">סכום</label>
