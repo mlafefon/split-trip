@@ -43,7 +43,7 @@ export const CurrencySelect = ({ value, onChange, label, className = '', short =
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-3 border border-slate-200 rounded-xl bg-white hover:border-indigo-500 transition-all outline-none focus:ring-2 focus:ring-indigo-500"
+        className="w-full h-[50px] flex items-center justify-between p-3 border border-slate-200 rounded-xl bg-white hover:border-indigo-500 transition-all outline-none focus:ring-2 focus:ring-indigo-500"
       >
         <span className="font-medium text-sm text-slate-700">
           {selectedCurrency ? (short ? selectedCurrency.code : `${selectedCurrency.code} - ${selectedCurrency.name}`) : value}

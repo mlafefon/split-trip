@@ -258,7 +258,7 @@ export const TripForm = ({ initialTrip, onSave, onCancel, currentUserId, setCurr
             <button
               type="button"
               onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              className="w-12 h-12 flex items-center justify-center text-2xl bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors shrink-0"
+              className="w-[50px] h-[50px] flex items-center justify-center text-2xl bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors shrink-0"
             >
               {icon}
             </button>
@@ -282,7 +282,7 @@ export const TripForm = ({ initialTrip, onSave, onCancel, currentUserId, setCurr
               required
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
-              className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+              className="w-full h-[50px] p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
               placeholder="לדוגמה: פריז, תאילנד..."
             />
           </div>
@@ -317,13 +317,13 @@ export const TripForm = ({ initialTrip, onSave, onCancel, currentUserId, setCurr
                   handleAddParticipant();
                 }
               }}
-              className="flex-1 p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+              className="flex-1 h-[50px] p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
               placeholder={participants.length === 0 ? "השם שלי..." : "שם המשתתף..."}
             />
             <button 
               type="button"
               onClick={handleAddParticipant}
-              className="bg-slate-100 text-slate-700 p-3 rounded-xl hover:bg-slate-200 transition-colors"
+              className="bg-slate-100 h-[50px] text-slate-700 p-3 rounded-xl hover:bg-slate-200 transition-colors flex items-center justify-center"
             >
               <Plus className="w-5 h-5" />
             </button>
@@ -389,7 +389,7 @@ export const TripForm = ({ initialTrip, onSave, onCancel, currentUserId, setCurr
             <select
               value={localCurrentUserId || ''}
               onChange={(e) => setLocalCurrentUserId(e.target.value || null)}
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+              className="w-full h-[50px] p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
             >
               <option value="" disabled>בחר משתתף...</option>
               <option value="none">אף אחד (צופה בלבד)</option>

@@ -589,7 +589,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                 <button
                   type="button"
                   onClick={() => setShowCategorySelect(!showCategorySelect)}
-                  className="w-[52px] h-[52px] rounded-xl flex items-center justify-center text-white shadow-sm transition-transform hover:scale-105 border border-slate-200"
+                  className="w-[50px] h-[50px] rounded-xl flex items-center justify-center text-white shadow-sm transition-transform hover:scale-105 border border-slate-200"
                   style={{ backgroundColor: selectedCategory?.color || '#f1f5f9' }}
                 >
                   {SelectedIcon ? (
@@ -643,7 +643,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   disabled={isTransfer}
-                  className={`w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none ${isTransfer ? 'bg-slate-50 text-slate-500' : ''}`}
+                  className={`w-full h-[50px] p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none ${isTransfer ? 'bg-slate-50 text-slate-500' : ''}`}
                   placeholder={tag || "לדוגמה: ארוחת ערב, מונית..."}
                 />
               </div>
@@ -666,7 +666,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                     calculateEqualSplits(parseFloat(val));
                   }
                 }}
-                className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-left"
+                className="w-full h-[50px] p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-left"
                 dir="ltr"
                 placeholder="0.00"
               />
@@ -958,7 +958,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
             required
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+            className="w-full h-[50px] p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
           />
         </div>
 
