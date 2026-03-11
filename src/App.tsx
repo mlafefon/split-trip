@@ -7,6 +7,7 @@ import { ChevronRight, Loader2, Share2, Pencil, WifiOff, MoreVertical, Archive, 
 import { ShareDialog } from './components/ShareDialog';
 import { InstallPrompt } from './components/InstallPrompt';
 import { ConfirmDialog } from './components/ConfirmDialog';
+import { AboutDialog } from './components/AboutDialog';
 import { CategoryEditor } from './components/CategoryEditor';
 import { ActivityLog } from './components/ActivityLog';
 import metadata from '../metadata.json';
@@ -418,12 +419,9 @@ export default function App() {
       </header>
 
       <main className="p-4 max-w-xl mx-auto mt-2">
-        <ConfirmDialog 
+        <AboutDialog 
           isOpen={showVibeModal}
-          title="אודות"
-          message="vibe by Amir Galanti"
-          onConfirm={() => setShowVibeModal(false)}
-          onCancel={() => setShowVibeModal(false)}
+          onClose={() => setShowVibeModal(false)}
         />
         <ConfirmDialog 
           isOpen={showDeleteConfirm}
