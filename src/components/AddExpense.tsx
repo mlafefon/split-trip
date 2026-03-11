@@ -611,7 +611,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                             setTag(cat.name);
                             setShowCategorySelect(false);
                           }}
-                          className={`w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-slate-50 transition-colors ${tag === cat.name ? 'bg-indigo-50' : ''}`}
+                          className={`w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-50 transition-colors ${tag === cat.name ? 'bg-indigo-50' : ''}`}
                         >
                           <div className="w-8 h-8 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: cat.color }}>
                             {Icon && <Icon className="w-4 h-4" />}
@@ -626,7 +626,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                         setShowCategoryEditor(true);
                         setShowCategorySelect(false);
                       }}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-sm hover:bg-slate-50 transition-colors border-t border-slate-100"
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-slate-50 transition-colors border-t border-slate-100"
                     >
                       <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-500">
                         <Settings className="w-4 h-4" />
