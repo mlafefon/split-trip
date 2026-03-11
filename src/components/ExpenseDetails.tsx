@@ -39,11 +39,11 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
         </div>
         <h2 className="text-2xl font-bold text-slate-800 text-center">{expense.description}</h2>
         <div className="text-3xl font-bold text-indigo-600 mt-2" dir="ltr">
-          {formatAmount(expense.amount)} {trip.tripCurrency}
+          {formatAmount(expense.amount)} <span className="text-[70%]">{trip.tripCurrency}</span>
         </div>
         {expense.originalCurrency && expense.originalCurrency !== trip.tripCurrency && expense.exchangeRate && (
           <div className="text-sm text-slate-400 mt-1" dir="ltr">
-            ({formatAmount(expense.amount / expense.exchangeRate)} {expense.originalCurrency})
+            ({formatAmount(expense.amount / expense.exchangeRate)} <span className="text-[70%]">{expense.originalCurrency}</span>)
           </div>
         )}
         <div className="flex items-center gap-2 mt-4 text-slate-500 bg-slate-50 px-3 py-1.5 rounded-full text-sm">
@@ -64,7 +64,7 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
               {payers.map((payer, idx) => (
                 <div key={idx} className="flex justify-between items-center">
                   <span className="text-slate-700 font-medium">{getParticipantName(payer.participantId, trip.participants, currentUserId)}</span>
-                  <span className="text-slate-600" dir="ltr">{formatAmount(payer.amount)} {trip.tripCurrency}</span>
+                  <span className="text-slate-600" dir="ltr">{formatAmount(payer.amount)} <span className="text-[70%]">{trip.tripCurrency}</span></span>
                 </div>
               ))}
             </div>
@@ -82,7 +82,7 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
               {expense.splits.map((split, idx) => (
                 <div key={idx} className="flex justify-between items-center">
                   <span className="text-slate-700 font-medium">{getParticipantName(split.participantId, trip.participants, currentUserId)}</span>
-                  <span className="text-slate-600" dir="ltr">{formatAmount(split.amount)} {trip.tripCurrency}</span>
+                  <span className="text-slate-600" dir="ltr">{formatAmount(split.amount)} <span className="text-[70%]">{trip.tripCurrency}</span></span>
                 </div>
               ))}
             </div>

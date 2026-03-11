@@ -103,9 +103,9 @@ export const ExportReport = ({ trip }: Props) => {
                   <td className="py-3 px-2 text-slate-800 font-medium">{expense.description}</td>
                   <td className="py-3 px-2 text-slate-800">
                     {expense.originalCurrency && expense.originalCurrency !== trip.tripCurrency ? (
-                      <span>{formatAmount(expense.amount / (expense.exchangeRate || 1))} {getCurrencySymbol(expense.originalCurrency)}</span>
+                      <span>{formatAmount(expense.amount / (expense.exchangeRate || 1))} <span className="text-[70%]">{getCurrencySymbol(expense.originalCurrency)}</span></span>
                     ) : (
-                      <span>{formatAmount(expense.amount)} {getCurrencySymbol(trip.tripCurrency)}</span>
+                      <span>{formatAmount(expense.amount)} <span className="text-[70%]">{getCurrencySymbol(trip.tripCurrency)}</span></span>
                     )}
                   </td>
                   <td className="py-3 px-2 text-slate-600">{payerNames}</td>
@@ -145,7 +145,7 @@ export const ExportReport = ({ trip }: Props) => {
                 const balance = balances[p.id] || 0;
                 return (
                   <td key={p.id} className="py-4 px-2 text-center whitespace-nowrap">
-                    <span dir="ltr">{formatAmount(balance)} {getCurrencySymbol(trip.tripCurrency)}</span>
+                    <span dir="ltr">{formatAmount(balance)} <span className="text-[70%]">{getCurrencySymbol(trip.tripCurrency)}</span></span>
                   </td>
                 );
               })}
@@ -167,7 +167,7 @@ export const ExportReport = ({ trip }: Props) => {
                   <span className="font-medium w-20">{fromName}</span>
                   <span className="text-slate-500 text-sm uppercase tracking-wide">חייב ל</span>
                   <span className="font-medium w-20">{toName}</span>
-                  <span className="font-bold mr-auto" dir="ltr">{formatAmount(settlement.amount)} {getCurrencySymbol(trip.tripCurrency)}</span>
+                  <span className="font-bold mr-auto" dir="ltr">{formatAmount(settlement.amount)} <span className="text-[70%]">{getCurrencySymbol(trip.tripCurrency)}</span></span>
                 </div>
               </div>
             );

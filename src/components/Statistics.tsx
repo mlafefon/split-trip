@@ -167,13 +167,18 @@ export const Statistics = ({ trip, currentUserId }: Props) => {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                   <Label 
-                    value={`${formatAmount(totalCategoryExpenses)} ${trip.tripCurrency}`} 
-                    position="center" 
-                    className="text-xl font-bold fill-slate-700"
+                    content={({ viewBox }) => {
+                      const { cx, cy } = viewBox as any;
+                      return (
+                        <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" className="text-xl font-bold fill-slate-700">
+                          {formatAmount(totalCategoryExpenses)} <tspan fontSize="70%">{trip.tripCurrency}</tspan>
+                        </text>
+                      );
+                    }}
                   />
                 </Pie>
                 <Tooltip 
-                  formatter={(value: number) => [`${formatAmount(value)} ${trip.tripCurrency}`, 'סכום']}
+                  formatter={(value: number) => [<>{formatAmount(value)} <span className="text-[70%]">{trip.tripCurrency}</span></>, 'סכום']}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -190,7 +195,7 @@ export const Statistics = ({ trip, currentUserId }: Props) => {
                     <span className="text-slate-700">{cat.name}</span>
                   </div>
                   <div className="text-slate-500" dir="ltr">
-                    {formatAmount(cat.value)} {trip.tripCurrency} ({((cat.value / totalCategoryExpenses) * 100).toFixed(1)}%)
+                    {formatAmount(cat.value)} <span className="text-[70%]">{trip.tripCurrency}</span> ({((cat.value / totalCategoryExpenses) * 100).toFixed(1)}%)
                   </div>
                 </div>
               );
@@ -219,7 +224,7 @@ export const Statistics = ({ trip, currentUserId }: Props) => {
                   ))}
                 </Pie>
                 <Tooltip 
-                  formatter={(value: number) => [`${formatAmount(value)} ${trip.tripCurrency}`, 'סכום']}
+                  formatter={(value: number) => [<>{formatAmount(value)} <span className="text-[70%]">{trip.tripCurrency}</span></>, 'סכום']}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -232,7 +237,7 @@ export const Statistics = ({ trip, currentUserId }: Props) => {
                   <span className="text-slate-700">{p.name}</span>
                 </div>
                 <div className="text-slate-500" dir="ltr">
-                  {formatAmount(p.value)} {trip.tripCurrency} ({((p.value / totalExpenses) * 100).toFixed(1)}%)
+                  {formatAmount(p.value)} <span className="text-[70%]">{trip.tripCurrency}</span> ({((p.value / totalExpenses) * 100).toFixed(1)}%)
                 </div>
               </div>
             ))}
@@ -250,7 +255,7 @@ export const Statistics = ({ trip, currentUserId }: Props) => {
                 <XAxis dataKey="name" fontSize={12} tickMargin={10} />
                 <YAxis fontSize={12} />
                 <Tooltip 
-                  formatter={(value: number) => [`${formatAmount(value)} ${trip.tripCurrency}`]}
+                  formatter={(value: number) => [<>{formatAmount(value)} <span className="text-[70%]">{trip.tripCurrency}</span></>]}
                   labelStyle={{ textAlign: 'right' }}
                 />
                 <Legend wrapperStyle={{ paddingTop: '20px' }} />

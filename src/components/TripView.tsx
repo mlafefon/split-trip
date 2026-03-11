@@ -381,7 +381,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
       <div className="bg-gradient-to-br from-indigo-600 to-violet-600 rounded-3xl p-6 text-white shadow-lg relative">
         <div className="text-indigo-100 text-sm mb-1">סה"כ הוצאות בטיול</div>
         <div className="text-4xl font-bold mb-2" dir="ltr">
-          {formatAmount(totalSpent)} <span className="text-2xl">{trip.tripCurrency}</span>
+          {formatAmount(totalSpent)} <span className="text-[70%]">{trip.tripCurrency}</span>
         </div>
         {trip.baseCurrency !== trip.tripCurrency && (
           <div className="text-indigo-200 text-sm bg-white/10 inline-block px-3 py-1 rounded-lg backdrop-blur-sm min-h-[32px]">
@@ -392,9 +392,9 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
               </div>
             ) : (
               <div dir="ltr" className="flex items-center gap-2">
-                ≈ {formatAmount(totalSpent * (exchangeRate || 1))} {trip.baseCurrency} 
+                ≈ {formatAmount(totalSpent * (exchangeRate || 1))} <span className="text-[70%]">{trip.baseCurrency}</span> 
                 <span className="mx-2 opacity-50">|</span>
-                <span className="opacity-70">1 {trip.tripCurrency} = {formatAmount(exchangeRate || 0)} {trip.baseCurrency}</span>
+                <span className="opacity-70">1 <span className="text-[70%]">{trip.tripCurrency}</span> = {formatAmount(exchangeRate || 0)} <span className="text-[70%]">{trip.baseCurrency}</span></span>
               </div>
             )}
           </div>
@@ -502,14 +502,14 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
                           {expense.originalCurrency && expense.originalCurrency !== trip.tripCurrency && expense.exchangeRate ? (
                             <>
                               <div className="font-bold text-slate-800">
-                                {formatAmount(expense.amount / expense.exchangeRate)} {expense.originalCurrency}
+                                {formatAmount(expense.amount / expense.exchangeRate)} <span className="text-[70%]">{expense.originalCurrency}</span>
                               </div>
                               <div className="text-[10px] text-slate-400 font-medium">
-                                {formatAmount(expense.amount)} {trip.tripCurrency}
+                                {formatAmount(expense.amount)} <span className="text-[70%]">{trip.tripCurrency}</span>
                               </div>
                             </>
                           ) : (
-                            <div className="font-bold text-slate-800">{formatAmount(expense.amount)} {trip.tripCurrency}</div>
+                            <div className="font-bold text-slate-800">{formatAmount(expense.amount)} <span className="text-[70%]">{trip.tripCurrency}</span></div>
                           )}
                           <div className="text-xs text-slate-400 text-right" dir="rtl">
                             {new Date(expense.date).toLocaleDateString('en-GB')}

@@ -98,7 +98,7 @@ export const TripList = ({ trips, archivedTrips, loadingArchived, onSelect, onCr
                   <span className="font-bold text-indigo-600">
                     {formatAmount(trip.expenses
                       .filter(exp => exp.tag !== 'העברה')
-                      .reduce((sum, exp) => sum + exp.amount, 0))} {trip.tripCurrency}
+                      .reduce((sum, exp) => sum + exp.amount, 0))} <span className="text-[70%]">{trip.tripCurrency}</span>
                   </span>
                 </div>
               </div>

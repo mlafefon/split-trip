@@ -37,12 +37,12 @@ export const Balances = ({ trip, exchangeRate, onSelectParticipant, onSettleDebt
                 <div className="flex items-center gap-3 pl-2">
                   <div className={`text-left ${isPositive ? 'text-emerald-600' : isNegative ? 'text-red-500' : 'text-slate-400'}`} dir="ltr">
                     <div className="font-bold">
-                      {isPositive ? '+' : ''}{formatAmount(balance)} {trip.tripCurrency}
+                      {isPositive ? '+' : ''}{formatAmount(balance)} <span className="text-[70%]">{trip.tripCurrency}</span>
                     </div>
                     <div className="text-xs mt-0.5 flex items-center gap-2">
                       {exchangeRate && trip.baseCurrency !== trip.tripCurrency && !isZero && (
                         <span className="opacity-60">
-                          ≈ {isPositive ? '+' : ''}{formatAmount(balance * exchangeRate)} {trip.baseCurrency}
+                          ≈ {isPositive ? '+' : ''}{formatAmount(balance * exchangeRate)} <span className="text-[70%]">{trip.baseCurrency}</span>
                         </span>
                       )}
                       <span className="opacity-80">
@@ -82,11 +82,11 @@ export const Balances = ({ trip, exchangeRate, onSelectParticipant, onSettleDebt
                   </div>
                   
                   <div className="flex flex-col items-center text-indigo-600 px-2" dir="ltr">
-                    <div className="font-bold whitespace-nowrap">{formatAmount(t.amount)} {trip.tripCurrency}</div>
+                    <div className="font-bold whitespace-nowrap">{formatAmount(t.amount)} <span className="text-[70%]">{trip.tripCurrency}</span></div>
                     <ArrowLeft className="w-5 h-5 my-1" />
                     {exchangeRate && trip.baseCurrency !== trip.tripCurrency && (
                       <div className="text-xs text-slate-400 whitespace-nowrap">
-                        ≈ {formatAmount(t.amount * exchangeRate)} {trip.baseCurrency}
+                        ≈ {formatAmount(t.amount * exchangeRate)} <span className="text-[70%]">{trip.baseCurrency}</span>
                       </div>
                     )}
                   </div>

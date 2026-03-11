@@ -81,7 +81,7 @@ export const ParticipantDetails = ({ trip, participantId, onClose, onSelectExpen
       <div className="flex flex-col items-center mb-6 mt-2">
         <h2 className="text-2xl font-bold text-slate-800 text-center">{formatParticipantName(participant.name, participant.id === currentUserId)}</h2>
         <div className={`text-3xl font-bold mt-2 ${totalBalance >= 0 ? 'text-emerald-600' : 'text-red-500'}`} dir="ltr">
-          {totalBalance >= 0 ? '+' : ''}{formatAmount(Math.abs(totalBalance))} {trip.tripCurrency}
+          {totalBalance >= 0 ? '+' : ''}{formatAmount(Math.abs(totalBalance))} <span className="text-[70%]">{trip.tripCurrency}</span>
         </div>
         <div className="text-sm text-slate-500 mt-1">
           {totalBalance >= 0 ? 'חייבים לו/ה' : 'חייב/ת'}
@@ -121,7 +121,7 @@ export const ParticipantDetails = ({ trip, participantId, onClose, onSelectExpen
                 <div className="flex flex-col items-end">
                   <div className="flex items-center gap-2">
                     <div className={`font-bold text-lg whitespace-nowrap ${net >= 0 ? 'text-emerald-600' : 'text-red-500'}`} dir="ltr">
-                      {net >= 0 ? '+' : ''}{formatAmount(Math.abs(net))} {trip.tripCurrency}
+                      {net >= 0 ? '+' : ''}{formatAmount(Math.abs(net))} <span className="text-[70%]">{trip.tripCurrency}</span>
                     </div>
                     <ChevronLeft className="w-5 h-5 text-slate-300" />
                   </div>

@@ -686,8 +686,8 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                    </>
                  ) : (
                    <span>
-                     ≈ {formatAmount(parseFloat(amount || '0') * parseFloat(exchangeRate || '0'))} {trip.tripCurrency}
-                     <span className="opacity-70 mx-1">(1 {currency} = {formatAmount(parseFloat(exchangeRate || '0'))} {trip.tripCurrency})</span>
+                     ≈ {formatAmount(parseFloat(amount || '0') * parseFloat(exchangeRate || '0'))} <span className="text-[70%]">{trip.tripCurrency}</span>
+                     <span className="opacity-70 mx-1">(1 <span className="text-[70%]">{currency}</span> = {formatAmount(parseFloat(exchangeRate || '0'))} <span className="text-[70%]">{trip.tripCurrency}</span>)</span>
                    </span>
                  )}
               </div>
@@ -753,7 +753,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                           dir="ltr"
                           placeholder="0.00"
                         />
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">{currency}</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"><span className="text-[70%]">{currency}</span></span>
                       </div>
                     </div>
                   );
@@ -833,14 +833,14 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                 }
 
                 // Determine split amount text
-                let splitAmountText = '';
+                let splitAmountText: React.ReactNode = null;
                 if (isSelected) {
                    const total = parseFloat(amount || '0');
                    if (splitMode === 'PERCENTAGE') {
                       const pct = parseFloat(splitValues[p.id] || '0');
                       if (!isNaN(pct) && !isNaN(total)) {
                          const val = (pct / 100) * total;
-                         splitAmountText = `(${formatAmount(val)} ${currency})`;
+                         splitAmountText = <>( {formatAmount(val)} <span className="text-[70%]">{currency}</span> )</>;
                       }
                    } else if (splitMode === 'SHARES') {
                       const shares = parseFloat(splitValues[p.id] || '0');
@@ -849,7 +849,7 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
                         .reduce((sum, [, val]) => sum + (parseFloat(val as string) || 0), 0);
                       if (!isNaN(shares) && !isNaN(total) && totalShares > 0) {
                          const val = (shares / totalShares) * total;
-                         splitAmountText = `(${formatAmount(val)} ${currency})`;
+                         splitAmountText = <>( {formatAmount(val)} <span className="text-[70%]">{currency}</span> )</>;
                       }
                    }
                 }
