@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
 import { Trip, Participant, Category } from '../types';
 import { CURRENCIES, fetchExchangeRates } from '../utils/currency';
 import { DEFAULT_CATEGORIES } from '../utils/categories';
@@ -224,7 +225,13 @@ export const TripForm = ({ initialTrip, onSave, onCancel, currentUserId, setCurr
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+      className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative"
+    >
       <ConfirmDialog 
         isOpen={showCurrencyConfirm}
         title="שינוי מטבע טיול"
@@ -430,6 +437,6 @@ export const TripForm = ({ initialTrip, onSave, onCancel, currentUserId, setCurr
           </button>
         </div>
       </form>
-    </div>
+    </motion.div>
   );
 };

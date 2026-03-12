@@ -1,4 +1,5 @@
 import { Trip, Expense } from '../types';
+import { motion } from 'motion/react';
 import { ICON_MAP } from '../utils/categories';
 import { ArrowRightLeft, Pencil, Trash2, ArrowRight, Calendar, User, Users, FileText } from 'lucide-react';
 import { formatAmount } from '../utils/currency';
@@ -29,7 +30,13 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
     ((expense as any).paidBy ? [{ participantId: (expense as any).paidBy, amount: expense.amount }] : []);
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+      className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative"
+    >
       <div className="flex flex-col items-center mb-6 mt-2">
         <div 
           className="w-16 h-16 rounded-full flex items-center justify-center text-white shadow-md mb-4"
@@ -121,6 +128,6 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
           </button>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

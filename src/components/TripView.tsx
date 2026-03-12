@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Trip, Expense, Category } from '../types';
 import { AddExpense } from './AddExpense';
 import { TripForm } from './TripForm';
@@ -231,117 +232,93 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
     return false;
   }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
-  if (isEditing) {
-    return (
-      <TripForm 
-        initialTrip={trip}
-        onSave={handleUpdateTrip}
-        onCancel={() => onEditChange(false)}
-        currentUserId={currentUserId}
-        setCurrentUserId={setCurrentUserId}
-      />
-    );
-  }
-
-  if (addMode === 'EXPENSE') {
-    return (
-      <AddExpense 
-        trip={trip} 
-        onSave={handleAddExpense} 
-        onCancel={() => setAddMode('NONE')} 
-        onUpdateCategories={handleUpdateCategories}
-        currentUserId={currentUserId}
-      />
-    );
-  }
-
-  if (addMode === 'TRANSFER') {
-    const initialData: Partial<Expense> | undefined = settleDebtData ? {
-      amount: settleDebtData.amount,
-      description: 'הסדר חוב',
-      tag: 'העברה',
-      notes: 'הסדר חוב',
-      payers: [{ participantId: settleDebtData.from, amount: settleDebtData.amount }],
-      splits: [{ participantId: settleDebtData.to, amount: settleDebtData.amount }],
-      originalCurrency: trip.tripCurrency
-    } : undefined;
-
-    return (
-      <AddExpense 
-        trip={trip} 
-        onSave={handleAddExpense} 
-        onCancel={() => {
-          setAddMode('NONE');
-          setSettleDebtData(null);
-        }} 
-        onUpdateCategories={handleUpdateCategories}
-        defaultMode="TRANSFER"
-        initialData={initialData}
-        currentUserId={currentUserId}
-      />
-    );
-  }
-
-  if (editingExpenseId) {
-    const expenseToEdit = trip.expenses.find(e => e.id === editingExpenseId);
-    if (expenseToEdit) {
-      return (
+  return (
+    <AnimatePresence mode="wait">
+      {isEditing ? (
+        <TripForm 
+          key="trip-form"
+          initialTrip={trip}
+          onSave={handleUpdateTrip}
+          onCancel={() => onEditChange(false)}
+          currentUserId={currentUserId}
+          setCurrentUserId={setCurrentUserId}
+        />
+      ) : addMode === 'EXPENSE' ? (
         <AddExpense 
+          key="add-expense"
           trip={trip} 
-          initialExpense={expenseToEdit}
+          onSave={handleAddExpense} 
+          onCancel={() => setAddMode('NONE')} 
+          onUpdateCategories={handleUpdateCategories}
+          currentUserId={currentUserId}
+        />
+      ) : addMode === 'TRANSFER' ? (
+        <AddExpense 
+          key="add-transfer"
+          trip={trip} 
+          onSave={handleAddExpense} 
+          onCancel={() => {
+            setAddMode('NONE');
+            setSettleDebtData(null);
+          }} 
+          onUpdateCategories={handleUpdateCategories}
+          defaultMode="TRANSFER"
+          initialData={settleDebtData ? {
+            amount: settleDebtData.amount,
+            description: 'הסדר חוב',
+            tag: 'העברה',
+            notes: 'הסדר חוב',
+            payers: [{ participantId: settleDebtData.from, amount: settleDebtData.amount }],
+            splits: [{ participantId: settleDebtData.to, amount: settleDebtData.amount }],
+            originalCurrency: trip.tripCurrency
+          } : undefined}
+          currentUserId={currentUserId}
+        />
+      ) : editingExpenseId ? (
+        <AddExpense 
+          key="edit-expense"
+          trip={trip} 
+          initialExpense={trip.expenses.find(e => e.id === editingExpenseId)}
           onSave={handleUpdateExpense} 
           onCancel={() => setEditingExpenseId(null)} 
           onUpdateCategories={handleUpdateCategories}
           currentUserId={currentUserId}
         />
-      );
-    }
-  }
-
-  if (viewingExpenseId) {
-    const expenseToView = trip.expenses.find(e => e.id === viewingExpenseId);
-    if (expenseToView) {
-      return (
+      ) : viewingExpenseId ? (
         <ExpenseDetails 
+          key="view-expense"
           trip={trip}
-          expense={expenseToView}
+          expense={trip.expenses.find(e => e.id === viewingExpenseId)!}
           onEdit={() => {
             setViewingExpenseId(null);
-            setEditingExpenseId(expenseToView.id);
+            setEditingExpenseId(viewingExpenseId);
           }}
           onDelete={() => {
             setViewingExpenseId(null);
-            setDeleteExpenseId(expenseToView.id);
+            setDeleteExpenseId(viewingExpenseId);
           }}
           onClose={() => setViewingExpenseId(null)}
           isReadOnly={isReadOnly}
           currentUserId={currentUserId}
         />
-      );
-    }
-  }
-
-  if (viewingParticipantId) {
-    return (
-      <ParticipantDetails 
-        trip={trip}
-        participantId={viewingParticipantId}
-        onClose={() => setViewingParticipantId(null)}
-        onSelectExpense={setViewingExpenseId}
-        currentUserId={currentUserId}
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <ConfirmDialog 
-        isOpen={!!deleteExpenseId}
-        title="מחיקת הוצאה"
-        message="האם אתה בטוח שברצונך למחוק הוצאה זו? הפעולה אינה הפיכה."
-        onConfirm={confirmDeleteExpense}
-        onCancel={() => setDeleteExpenseId(null)}
-      />
+      ) : viewingParticipantId ? (
+        <ParticipantDetails 
+          key="view-participant"
+          trip={trip}
+          participantId={viewingParticipantId}
+          onClose={() => setViewingParticipantId(null)}
+          onSelectExpense={setViewingExpenseId}
+          currentUserId={currentUserId}
+        />
+      ) : (
+        <motion.div key="trip-view-main" className="space-y-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <ConfirmDialog 
+            isOpen={!!deleteExpenseId}
+            title="מחיקת הוצאה"
+            message="האם אתה בטוח שברצונך למחוק הוצאה זו? הפעולה אינה הפיכה."
+            onConfirm={confirmDeleteExpense}
+            onCancel={() => setDeleteExpenseId(null)}
+          />
 
       {/* User Identification Modal */}
       {!isReadOnly && !currentUserId && (
@@ -425,9 +402,17 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
       </div>
 
       {/* Content */}
-      <div className="min-h-[300px]">
-        {activeTab === 'EXPENSES' && (
-          <div className="space-y-4">
+      <div className="min-h-[300px] relative overflow-hidden">
+        <AnimatePresence mode="wait">
+          {activeTab === 'EXPENSES' && (
+            <motion.div
+              key="expenses"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-4"
+            >
             {/* Search Bar */}
             <div className="relative">
               <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
@@ -481,8 +466,12 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
                   }
 
                   return (
-                    <div 
+                    <motion.div 
                       key={expense.id} 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
                       onClick={() => setViewingExpenseId(expense.id)}
                       className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center cursor-pointer hover:bg-slate-50 transition-colors"
                     >
@@ -516,7 +505,7 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
                         </div>
                         <ChevronLeft className="w-5 h-5 text-slate-300" />
                       </div>
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
@@ -524,13 +513,24 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
             
             {!isReadOnly && (
               <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-3">
+                <AnimatePresence>
                 {showMenu && (
                   <>
-                    <div 
-                      className="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-0 transition-opacity" 
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="fixed inset-0 bg-slate-900/20 backdrop-blur-[2px] z-0" 
                       onClick={() => setShowMenu(false)}
                     />
-                    <div className="flex flex-col gap-3 mb-4 animate-in slide-in-from-bottom-8 fade-in duration-300 z-10 min-w-[240px]">
+                    <motion.div 
+                      initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 20, scale: 0.9 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col gap-3 mb-4 z-10 min-w-[240px]"
+                    >
                       <button 
                         onClick={() => {
                           setAddMode('TRANSFER');
@@ -562,9 +562,10 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
                           <div className="text-xs text-slate-500">קניות, מסעדות, אטרקציות...</div>
                         </div>
                       </button>
-                    </div>
+                    </motion.div>
                   </>
                 )}
+                </AnimatePresence>
                 
                 <button 
                   onClick={() => {
@@ -584,23 +585,42 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
                 </button>
               </div>
             )}
-          </div>
+            </motion.div>
         )}
 
         {activeTab === 'BALANCES' && (
-          <Balances 
-            trip={trip} 
-            exchangeRate={exchangeRate} 
-            onSelectParticipant={setViewingParticipantId}
-            onSettleDebt={!isReadOnly ? handleSettleDebt : undefined}
-            currentUserId={currentUserId}
-          />
+          <motion.div
+            key="balances"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Balances 
+              trip={trip} 
+              exchangeRate={exchangeRate} 
+              onSelectParticipant={setViewingParticipantId}
+              onSettleDebt={!isReadOnly ? handleSettleDebt : undefined}
+              currentUserId={currentUserId}
+            />
+          </motion.div>
         )}
 
         {activeTab === 'STATISTICS' && (
-          <Statistics trip={trip} currentUserId={currentUserId} />
+          <motion.div
+            key="statistics"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.2 }}
+          >
+            <Statistics trip={trip} currentUserId={currentUserId} />
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
-    </div>
+      </motion.div>
+      )}
+    </AnimatePresence>
   );
 };

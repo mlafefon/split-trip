@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Trip } from '../types';
 import { Plane, Users, Calendar, Trash2, Archive, Eye, Pencil } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
@@ -52,21 +53,30 @@ export const TripList = ({ trips, archivedTrips, loadingArchived, onSelect, onCr
       </div>
 
       {trips.length === 0 ? (
-        <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-slate-100">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-12 bg-white rounded-2xl shadow-sm border border-slate-100"
+        >
           <Plane className="w-12 h-12 text-slate-300 mx-auto mb-4" />
           <p className="text-slate-500">עדיין אין טיולים. צור את הטיול הראשון שלך!</p>
-        </div>
+        </motion.div>
       ) : (
         <div className="grid gap-4">
-          {trips.map(trip => {
-            const canEditTrip = (trip.editCode && localTokens[trip.id] === trip.editCode) || !trip.editCode;
-            
-            return (
-              <div 
-                key={trip.id} 
-                className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-3 relative overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => onSelect(trip.id)}
-              >
+          <AnimatePresence>
+            {trips.map(trip => {
+              const canEditTrip = (trip.editCode && localTokens[trip.id] === trip.editCode) || !trip.editCode;
+              
+              return (
+                <motion.div 
+                  key={trip.id} 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col gap-3 relative overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                  onClick={() => onSelect(trip.id)}
+                >
                 <div className="flex justify-between items-start">
                   <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                     <span className="text-2xl">{trip.icon || '✈️'}</span>
@@ -101,9 +111,10 @@ export const TripList = ({ trips, archivedTrips, loadingArchived, onSelect, onCr
                       .reduce((sum, exp) => sum + exp.amount, 0))} <span className="text-[70%]">{trip.tripCurrency}</span>
                   </span>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
+          </AnimatePresence>
         </div>
       )}
 

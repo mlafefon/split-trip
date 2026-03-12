@@ -1,4 +1,5 @@
 import { Trip, Expense } from '../types';
+import { motion } from 'motion/react';
 import { ArrowRight, ArrowRightLeft, Receipt, ChevronLeft } from 'lucide-react';
 import { formatAmount } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
@@ -77,7 +78,13 @@ export const ParticipantDetails = ({ trip, participantId, onClose, onSelectExpen
   const totalBalance = transactions.reduce((sum, t) => sum + t.net, 0);
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+      className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative"
+    >
       <div className="flex flex-col items-center mb-6 mt-2">
         <h2 className="text-2xl font-bold text-slate-800 text-center">{formatParticipantName(participant.name, participant.id === currentUserId)}</h2>
         <div className={`text-3xl font-bold mt-2 ${totalBalance >= 0 ? 'text-emerald-600' : 'text-red-500'}`} dir="ltr">
@@ -134,6 +141,6 @@ export const ParticipantDetails = ({ trip, participantId, onClose, onSelectExpen
           })
         )}
       </div>
-    </div>
+    </motion.div>
   );
 };

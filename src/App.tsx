@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { TripList } from './components/TripList';
 import { TripView } from './components/TripView';
 import { TripForm } from './components/TripForm';
@@ -441,87 +442,97 @@ export default function App() {
           onCancel={() => setShowDeleteConfirm(false)}
         />
 
-        {isCreating ? (
-          <TripForm 
-            onSave={(trip) => {
-              // Fire and forget the createTrip call so the UI doesn't block if offline
-              createTrip(trip).catch(error => {
-                console.error("Failed to create trip in Firebase:", error);
-              });
-              
-              setIsCreating(false);
-              // Navigate to the new trip immediately
-              handleSelectTrip(trip.id);
-            }} 
-            onCancel={() => setIsCreating(false)} 
-          />
-        ) : activeTrip && isEditingCategories ? (
-          <CategoryEditor
-            categories={activeTrip.categories}
-            onSave={async (newCategories) => {
-              await updateTrip({ 
-                ...activeTrip, 
-                categories: newCategories,
-                activityLog: [
-                  ...(activeTrip.activityLog || []),
-                  {
-                    id: crypto.randomUUID(),
-                    participantId: currentUserId || activeTrip.participants[0].id,
-                    action: 'UPDATE_TRIP',
-                    timestamp: new Date().toISOString(),
-                    details: `עדכן/ה את קטגוריות הטיול`
-                  }
-                ]
-              });
-              setIsEditingCategories(false);
-            }}
-            onClose={() => setIsEditingCategories(false)}
-          />
-        ) : activeTrip && isViewingActivity ? (
-          <ActivityLog
-            trip={activeTrip}
-            onClose={() => setIsViewingActivity(false)}
-            currentUserId={currentUserId}
-            onExpenseClick={(expenseId) => {
-              setViewingExpenseIdFromActivity(expenseId);
-              setIsViewingActivity(false);
-            }}
-          />
-        ) : activeTrip ? (
-          <>
-            <TripView 
-              trip={activeTrip} 
-              updateTrip={updateTrip} 
-              setBackHandler={handleSetBackHandler}
-              isReadOnly={!activeTripCanEdit}
-              isEditing={isEditingTrip}
-              onEditChange={setIsEditingTrip}
-              currentUserId={currentUserId}
-              setCurrentUserId={handleSetCurrentUserId}
-              initialViewingExpenseId={viewingExpenseIdFromActivity}
-              onClearInitialViewingExpenseId={() => setViewingExpenseIdFromActivity(null)}
-            />
-            <ShareDialog 
-              isOpen={showShareDialog}
-              onClose={() => setShowShareDialog(false)}
-              tripId={activeTrip.id}
-              tripName={activeTrip.destination}
-              editCode={activeTrip.editCode}
-              canEdit={activeTripCanEdit}
-            />
-          </>
-        ) : (
-          <TripList 
-            trips={trips} 
-            archivedTrips={archivedTrips}
-            loadingArchived={loadingArchived}
-            onSelect={handleSelectTrip} 
-            onCreateNew={() => setIsCreating(true)} 
-            onDelete={deleteTrip} 
-            onLoadArchived={loadArchivedTrips}
-            onUnarchive={unarchiveTrip}
-          />
-        )}
+        <AnimatePresence mode="wait">
+          {isCreating ? (
+            <motion.div key="creating" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+              <TripForm 
+                onSave={(trip) => {
+                  // Fire and forget the createTrip call so the UI doesn't block if offline
+                  createTrip(trip).catch(error => {
+                    console.error("Failed to create trip in Firebase:", error);
+                  });
+                  
+                  setIsCreating(false);
+                  // Navigate to the new trip immediately
+                  handleSelectTrip(trip.id);
+                }} 
+                onCancel={() => setIsCreating(false)} 
+              />
+            </motion.div>
+          ) : activeTrip && isEditingCategories ? (
+            <motion.div key="editing-categories" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+              <CategoryEditor
+                categories={activeTrip.categories}
+                onSave={async (newCategories) => {
+                  await updateTrip({ 
+                    ...activeTrip, 
+                    categories: newCategories,
+                    activityLog: [
+                      ...(activeTrip.activityLog || []),
+                      {
+                        id: crypto.randomUUID(),
+                        participantId: currentUserId || activeTrip.participants[0].id,
+                        action: 'UPDATE_TRIP',
+                        timestamp: new Date().toISOString(),
+                        details: `עדכן/ה את קטגוריות הטיול`
+                      }
+                    ]
+                  });
+                  setIsEditingCategories(false);
+                }}
+                onClose={() => setIsEditingCategories(false)}
+              />
+            </motion.div>
+          ) : activeTrip && isViewingActivity ? (
+            <motion.div key="viewing-activity" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+              <ActivityLog
+                trip={activeTrip}
+                onClose={() => setIsViewingActivity(false)}
+                currentUserId={currentUserId}
+                onExpenseClick={(expenseId) => {
+                  setViewingExpenseIdFromActivity(expenseId);
+                  setIsViewingActivity(false);
+                }}
+              />
+            </motion.div>
+          ) : activeTrip ? (
+            <motion.div key="trip-view" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+              <TripView 
+                trip={activeTrip} 
+                updateTrip={updateTrip} 
+                setBackHandler={handleSetBackHandler}
+                isReadOnly={!activeTripCanEdit}
+                isEditing={isEditingTrip}
+                onEditChange={setIsEditingTrip}
+                currentUserId={currentUserId}
+                setCurrentUserId={handleSetCurrentUserId}
+                initialViewingExpenseId={viewingExpenseIdFromActivity}
+                onClearInitialViewingExpenseId={() => setViewingExpenseIdFromActivity(null)}
+              />
+              <ShareDialog 
+                isOpen={showShareDialog}
+                onClose={() => setShowShareDialog(false)}
+                tripId={activeTrip.id}
+                tripName={activeTrip.destination}
+                editCode={activeTrip.editCode}
+                canEdit={activeTripCanEdit}
+              />
+            </motion.div>
+          ) : (
+            <motion.div key="trip-list" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}>
+              <TripList 
+                trips={trips} 
+                archivedTrips={archivedTrips}
+                loadingArchived={loadingArchived}
+                onSelect={handleSelectTrip} 
+                onCreateNew={() => setIsCreating(true)} 
+                onDelete={deleteTrip} 
+                onLoadArchived={loadArchivedTrips}
+                onUnarchive={unarchiveTrip}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
       
       <InstallPrompt />

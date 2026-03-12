@@ -246,7 +246,7 @@ export const Statistics = ({ trip, currentUserId }: Props) => {
                       const { cx, cy } = viewBox as any;
                       return (
                         <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" className="text-xl font-bold fill-slate-700">
-                          {formatAmount(totalCategoryExpenses)} <tspan fontSize="70%">{trip.tripCurrency}</tspan>
+                          {formatAmount(totalCategoryExpenses)} {trip.tripCurrency}
                         </text>
                       );
                     }}

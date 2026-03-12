@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
 import { Trip, Expense, ExpenseSplit, Category } from '../types';
 import { Check, Plus, Settings, Loader2, ChevronDown, Lock, ArrowRight, Tag } from 'lucide-react';
 import { CURRENCIES, fetchExchangeRates, formatAmount } from '../utils/currency';
@@ -576,7 +577,13 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
   }
 
   return (
-    <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 relative">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+      className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-slate-100 relative"
+    >
       <h2 className="text-2xl font-bold text-slate-800 mb-6 text-center">{initialExpense ? (isTransfer ? 'עריכת העברה' : 'עריכת הוצאה') : (isTransfer ? 'העברה חדשה' : 'הוספת הוצאה')}</h2>
       
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -978,6 +985,6 @@ export const AddExpense = ({ trip, initialExpense, initialData, onSave, onCancel
           </button>
         </div>
       </form>
-    </div>
+    </motion.div>
   );
 };
