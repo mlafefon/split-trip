@@ -7,7 +7,7 @@ import { Balances } from './Balances';
 import { Statistics } from './Statistics';
 import { ExpenseDetails } from './ExpenseDetails';
 import { ParticipantDetails } from './ParticipantDetails';
-import { Receipt, Users, BarChart3, Plus, Trash2, Pencil, Loader2, ArrowRightLeft, Search, X, ChevronLeft, Activity } from 'lucide-react';
+import { Receipt, Users, BarChart3, Plus, Trash2, Pencil, Loader2, ArrowRightLeft, Search, X, ChevronLeft, Activity, Filter } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
 import { fetchExchangeRates, formatAmount } from '../utils/currency';
 import { ICON_MAP } from '../utils/categories';
@@ -49,6 +49,9 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [isFetchingRate, setIsFetchingRate] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedPayer, setSelectedPayer] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState(false);
   const [settleDebtData, setSettleDebtData] = useState<{ from: string; to: string; amount: number } | null>(null);
 
   useEffect(() => {
@@ -213,7 +216,30 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
     .filter(e => e.tag !== 'העברה')
     .reduce((sum, e) => sum + e.amount, 0);
 
+  const activeCategories = useMemo(() => {
+    const usedTags = new Set(trip.expenses.map(e => e.tag).filter(Boolean));
+    return trip.categories.filter(c => usedTags.has(c.name));
+  }, [trip.expenses, trip.categories]);
+
+  const toggleFilters = () => {
+    if (showFilters) {
+      setSelectedCategory(null);
+      setSelectedPayer(null);
+    }
+    setShowFilters(!showFilters);
+  };
+
   const filteredExpenses = trip.expenses.filter(expense => {
+    // Check category filter
+    if (selectedCategory && expense.tag !== selectedCategory) return false;
+
+    // Check payer filter
+    if (selectedPayer) {
+      const payers = expense.payers || 
+        ((expense as any).paidBy ? [{ participantId: (expense as any).paidBy, amount: expense.amount }] : []);
+      if (!payers.some(p => p.participantId === selectedPayer)) return false;
+    }
+
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     
@@ -414,26 +440,94 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
               className="space-y-4"
             >
             {/* Search Bar */}
-            <div className="relative">
-              <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-slate-400" />
+            <div className="relative flex gap-2">
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-slate-400" />
+                </div>
+                <input
+                  type="text"
+                  className="block w-full pr-10 pl-10 py-3 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                  placeholder="חיפוש הוצאות..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute inset-y-0 left-0 pl-3 flex items-center cursor-pointer text-slate-400 hover:text-slate-600"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                )}
               </div>
-              <input
-                type="text"
-                className="block w-full pr-10 pl-10 py-3 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
-                placeholder="חיפוש הוצאות..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute inset-y-0 left-0 pl-3 flex items-center cursor-pointer text-slate-400 hover:text-slate-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              )}
+              <button
+                onClick={toggleFilters}
+                className={`p-3 rounded-xl border transition-colors flex items-center justify-center ${showFilters || selectedCategory || selectedPayer ? 'bg-indigo-50 border-indigo-200 text-indigo-600' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+              >
+                <Filter className="w-5 h-5" />
+              </button>
             </div>
+
+            {/* Filters */}
+            <AnimatePresence>
+              {showFilters && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="bg-white p-4 rounded-xl border border-slate-200 space-y-4 shadow-sm">
+                    {/* Category Filter */}
+                    <div>
+                      <div className="text-xs font-bold text-slate-500 mb-2">סינון לפי קטגוריה</div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setSelectedCategory(null)}
+                          className={`px-3 py-1.5 rounded-full text-sm transition-colors ${!selectedCategory ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                        >
+                          הכל
+                        </button>
+                        {activeCategories.map(category => (
+                          <button
+                            key={category.name}
+                            onClick={() => setSelectedCategory(category.name)}
+                            className={`px-3 py-1.5 rounded-full text-sm transition-colors ${selectedCategory === category.name ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                          >
+                            {category.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Payer Filter */}
+                    {trip.participants.length > 1 && (
+                      <div>
+                        <div className="text-xs font-bold text-slate-500 mb-2">סינון לפי משלם</div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => setSelectedPayer(null)}
+                            className={`px-3 py-1.5 rounded-full text-sm transition-colors ${!selectedPayer ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                          >
+                            כולם
+                          </button>
+                          {trip.participants.map(participant => (
+                            <button
+                              key={participant.id}
+                              onClick={() => setSelectedPayer(participant.id)}
+                              className={`px-3 py-1.5 rounded-full text-sm transition-colors ${selectedPayer === participant.id ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                            >
+                              {participant.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {trip.expenses.length === 0 ? (
               <div className="text-center py-12 text-slate-400">
