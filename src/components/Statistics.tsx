@@ -1,6 +1,6 @@
 import { Trip } from '../types';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
-import { Download, Printer } from 'lucide-react';
+import { Download, Printer, TrendingUp, Calendar, Award } from 'lucide-react';
 import { ICON_MAP } from '../utils/categories';
 import { formatAmount } from '../utils/currency';
 import { getParticipantName, formatParticipantName } from '../utils/participants';
@@ -67,6 +67,42 @@ export const Statistics = ({ trip, currentUserId }: Props) => {
       value: total
     };
   }).filter(d => d.value > 0);
+
+  // Calculate Insights
+  const expensesDates = trip.expenses
+    .filter(e => e.tag !== 'העברה')
+    .map(e => {
+      const d = new Date(e.date);
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    });
+  
+  let averageDaily = 0;
+  if (expensesDates.length > 0) {
+    const minDate = Math.min(...expensesDates);
+    const maxDate = Math.max(...expensesDates);
+    const days = Math.round((maxDate - minDate) / (1000 * 60 * 60 * 24)) + 1;
+    averageDaily = totalCategoryExpenses / days;
+  }
+
+  let mostExpensiveDay = { name: '', amount: 0 };
+  dailyData.forEach((day: any) => {
+    const dayTotal = Object.entries(day).reduce((sum, [key, val]) => {
+      if (key !== 'dateKey' && key !== 'name') return sum + (val as number);
+      return sum;
+    }, 0);
+    if (dayTotal > mostExpensiveDay.amount) {
+      mostExpensiveDay = { name: day.name, amount: dayTotal };
+    }
+  });
+
+  let mostExpensiveCategory = { name: '', amount: 0, percentage: 0 };
+  if (categoryData.length > 0) {
+    mostExpensiveCategory = {
+      name: categoryData[0].name,
+      amount: categoryData[0].value,
+      percentage: Math.round((categoryData[0].value / totalCategoryExpenses) * 100)
+    };
+  }
 
   const exportToCSV = () => {
     // BOM for Hebrew support in Excel
@@ -146,6 +182,45 @@ export const Statistics = ({ trip, currentUserId }: Props) => {
           <Download className="w-4 h-4" />
           ייצוא ל-CSV
         </button>
+      </div>
+
+      {/* Quick Insights Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div className="bg-blue-50 p-3 rounded-xl text-blue-600">
+            <TrendingUp className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="text-sm text-slate-500 font-medium">ממוצע ליום</div>
+            <div className="text-lg font-bold text-slate-800" dir="ltr">
+              {formatAmount(averageDaily)} <span className="text-xs">{trip.tripCurrency}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div className="bg-rose-50 p-3 rounded-xl text-rose-600">
+            <Calendar className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="text-sm text-slate-500 font-medium">היום היקר ביותר {mostExpensiveDay.name ? `(${mostExpensiveDay.name})` : ''}</div>
+            <div className="text-lg font-bold text-slate-800" dir="ltr">
+              {formatAmount(mostExpensiveDay.amount)} <span className="text-xs">{trip.tripCurrency}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+          <div className="bg-emerald-50 p-3 rounded-xl text-emerald-600">
+            <Award className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="text-sm text-slate-500 font-medium">הכי הרבה הוצאות {mostExpensiveCategory.name ? `(${mostExpensiveCategory.name})` : ''}</div>
+            <div className="text-lg font-bold text-slate-800" dir="ltr">
+              {mostExpensiveCategory.percentage}% <span className="text-xs font-normal text-slate-500">מהתקציב</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {totalCategoryExpenses > 0 && (

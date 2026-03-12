@@ -45,7 +45,6 @@ export const TripView = ({ trip, updateTrip, setBackHandler, isReadOnly = false,
       }
     }
   }, [initialViewingExpenseId, onClearInitialViewingExpenseId]);
-  // isEditing state removed
   const [exchangeRate, setExchangeRate] = useState<number | null>(null);
   const [isFetchingRate, setIsFetchingRate] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
