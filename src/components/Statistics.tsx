@@ -1,6 +1,6 @@
 import { Trip } from '../types';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Label, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
-import { Download, Printer, TrendingUp, Calendar, Award } from 'lucide-react';
+import { Download, Printer, TrendingUp, Calendar, Award, Wallet } from 'lucide-react';
 import { ICON_MAP } from '../utils/categories';
 import { formatAmount } from '../utils/currency';
 import { getParticipantName, formatParticipantName } from '../utils/participants';
@@ -53,6 +53,14 @@ export const Statistics = ({ trip, currentUserId }: Props) => {
   const dailyData = Object.values(dailyMap).sort((a: any, b: any) => a.dateKey.localeCompare(b.dateKey));
 
   const totalExpenses = trip.expenses.reduce((sum, e) => sum + e.amount, 0);
+  
+  const expensesByCurrency = trip.expenses.reduce((acc, e) => {
+    if (e.tag === 'העברה') return acc;
+    const currency = e.originalCurrency || trip.tripCurrency;
+    const originalAmount = e.amount / (e.exchangeRate || 1);
+    acc[currency] = (acc[currency] || 0) + originalAmount;
+    return acc;
+  }, {} as Record<string, number>);
 
   const payerData = trip.participants.map(p => {
     const total = trip.expenses.reduce((sum, e) => {
@@ -185,40 +193,56 @@ export const Statistics = ({ trip, currentUserId }: Props) => {
       </div>
 
       {/* Quick Insights Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-blue-50 p-3 rounded-xl text-blue-600">
-            <TrendingUp className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-sm text-slate-500 font-medium">ממוצע ליום</div>
-            <div className="text-lg font-bold text-slate-800" dir="ltr">
-              {formatAmount(averageDaily)} <span className="text-xs">{trip.tripCurrency}</span>
+      <div className="grid grid-cols-2 gap-3 md:gap-4">
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col min-w-0">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="bg-blue-50 p-2.5 rounded-xl text-blue-600 shrink-0">
+              <TrendingUp className="w-5 h-5" />
             </div>
+            <div className="text-sm text-slate-500 font-medium leading-tight line-clamp-2">ממוצע ליום</div>
+          </div>
+          <div className="text-xl font-bold text-slate-800 truncate" dir="ltr">
+            {formatAmount(averageDaily)} <span className="text-sm font-normal text-slate-500">{trip.tripCurrency}</span>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-rose-50 p-3 rounded-xl text-rose-600">
-            <Calendar className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-sm text-slate-500 font-medium">היום היקר ביותר {mostExpensiveDay.name ? `(${mostExpensiveDay.name})` : ''}</div>
-            <div className="text-lg font-bold text-slate-800" dir="ltr">
-              {formatAmount(mostExpensiveDay.amount)} <span className="text-xs">{trip.tripCurrency}</span>
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col min-w-0">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="bg-rose-50 p-2.5 rounded-xl text-rose-600 shrink-0">
+              <Calendar className="w-5 h-5" />
             </div>
+            <div className="text-sm text-slate-500 font-medium leading-tight line-clamp-2">היום היקר ביותר {mostExpensiveDay.name ? `(${mostExpensiveDay.name})` : ''}</div>
+          </div>
+          <div className="text-xl font-bold text-slate-800 truncate" dir="ltr">
+            {formatAmount(mostExpensiveDay.amount)} <span className="text-sm font-normal text-slate-500">{trip.tripCurrency}</span>
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
-          <div className="bg-emerald-50 p-3 rounded-xl text-emerald-600">
-            <Award className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="text-sm text-slate-500 font-medium">הכי הרבה הוצאות {mostExpensiveCategory.name ? `(${mostExpensiveCategory.name})` : ''}</div>
-            <div className="text-lg font-bold text-slate-800" dir="ltr">
-              {mostExpensiveCategory.percentage}% <span className="text-xs font-normal text-slate-500">מהתקציב</span>
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col min-w-0">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="bg-emerald-50 p-2.5 rounded-xl text-emerald-600 shrink-0">
+              <Award className="w-5 h-5" />
             </div>
+            <div className="text-sm text-slate-500 font-medium leading-tight line-clamp-2">הכי הרבה הוצאות {mostExpensiveCategory.name ? `(${mostExpensiveCategory.name})` : ''}</div>
+          </div>
+          <div className="text-xl font-bold text-slate-800 truncate" dir="ltr">
+            {mostExpensiveCategory.percentage}% <span className="text-sm font-normal text-slate-500">מהתקציב</span>
+          </div>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col min-w-0">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="bg-amber-50 p-2.5 rounded-xl text-amber-600 shrink-0">
+              <Wallet className="w-5 h-5" />
+            </div>
+            <div className="text-sm text-slate-500 font-medium leading-tight line-clamp-2">סה"כ הוצאות</div>
+          </div>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(110px,1fr))] gap-x-2 gap-y-1 overflow-y-auto max-h-[80px]" dir="ltr">
+            {Object.entries(expensesByCurrency).map(([currency, amount]) => (
+              <div key={currency} className="text-lg font-bold text-slate-800 truncate">
+                {formatAmount(amount)} <span className="text-sm font-normal text-slate-500">{currency}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
