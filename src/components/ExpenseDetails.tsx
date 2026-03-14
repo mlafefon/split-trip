@@ -6,6 +6,7 @@ import { formatAmount } from '../utils/currency';
 import { getParticipantName } from '../utils/participants';
 
 type Props = {
+  key?: string;
   trip: Trip;
   expense: Expense;
   onEdit: () => void;

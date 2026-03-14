@@ -6,6 +6,7 @@ import { ICON_MAP } from '../utils/categories';
 import { getParticipantName, formatParticipantName } from '../utils/participants';
 
 type Props = {
+  key?: string;
   trip: Trip;
   participantId: string;
   onClose: () => void;

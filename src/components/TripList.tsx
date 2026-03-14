@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Trip } from '../types';
 import { Plane, Users, Calendar, Trash2, Archive, Eye, Pencil } from 'lucide-react';
 import { ConfirmDialog } from './ConfirmDialog';
+import { AppIcon } from './AppIcon';
 import { formatAmount } from '../utils/currency';
 
 type Props = {
@@ -58,7 +59,7 @@ export const TripList = ({ trips, archivedTrips, loadingArchived, onSelect, onCr
           animate={{ opacity: 1, y: 0 }}
           className="text-center py-12 bg-white rounded-2xl shadow-sm border border-slate-100"
         >
-          <Plane className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+          <AppIcon className="w-16 h-16 mx-auto mb-4 opacity-50 grayscale" />
           <p className="text-slate-500">עדיין אין טיולים. צור את הטיול הראשון שלך!</p>
         </motion.div>
       ) : (

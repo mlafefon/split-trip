@@ -11,6 +11,7 @@ import { ConfirmDialog } from './components/ConfirmDialog';
 import { AboutDialog } from './components/AboutDialog';
 import { CategoryEditor } from './components/CategoryEditor';
 import { ActivityLog } from './components/ActivityLog';
+import { AppIcon } from './components/AppIcon';
 import metadata from '../metadata.json';
 
 import { ExportReport } from './components/ExportReport';
@@ -323,6 +324,7 @@ export default function App() {
                 }
               }}
             >
+              {!activeTrip && !isCreating && <AppIcon className="w-8 h-8" />}
               {activeTrip && <span className="shrink-0">{activeTrip.icon || '✈️'}</span>}
               <span className="truncate">
                 {activeTrip ? activeTrip.destination : isCreating ? 'טיול חדש' : 'ניהול תקציב טיולים'}

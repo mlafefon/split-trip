@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Share, PlusSquare, Download } from 'lucide-react';
+import { AppIcon } from './AppIcon';
 
 export const InstallPrompt = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -77,8 +78,8 @@ export const InstallPrompt = () => {
         </button>
 
         <div className="flex gap-4 pr-2">
-          <div className="bg-indigo-100 p-3 rounded-xl h-fit">
-            <Download className="w-6 h-6 text-indigo-600" />
+          <div className="bg-indigo-50 p-3 rounded-xl h-fit">
+            <AppIcon className="w-8 h-8" />
           </div>
           <div className="flex-1">
             <h3 className="font-bold text-slate-800 mb-1">התקן את האפליקציה</h3>

@@ -9,6 +9,7 @@ import { CurrencySelect } from './CurrencySelect';
 import { ConfirmDialog } from './ConfirmDialog';
 
 type Props = {
+  key?: string;
   initialTrip?: Trip;
   onSave: (trip: Trip) => void;
   onCancel: () => void;

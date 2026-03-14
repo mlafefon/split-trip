@@ -9,6 +9,7 @@ import { CurrencySelect } from './CurrencySelect';
 import { Select } from './Select';
 
 type Props = {
+  key?: string;
   trip: Trip;
   initialExpense?: Expense;
   initialData?: Partial<Expense>;
