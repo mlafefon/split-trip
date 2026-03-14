@@ -2,17 +2,18 @@ import { Trip } from '../types';
 import { calculateBalances, calculateSettlement } from '../utils/settlement';
 import { ArrowLeft, ChevronLeft } from 'lucide-react';
 import { formatAmount } from '../utils/currency';
+import { getParticipantName } from '../utils/participants';
 
 type Props = {
   trip: Trip;
   exchangeRate: number | null;
   onSelectParticipant?: (id: string) => void;
   onSettleDebt?: (data: { from: string; to: string; amount: number }) => void;
+  currentUserId?: string | null;
 };
 
-export const Balances = ({ trip, exchangeRate, onSelectParticipant, onSettleDebt }: Props) => {
+export const Balances = ({ trip, exchangeRate, onSelectParticipant, onSettleDebt, currentUserId }: Props) => {
   const balances = calculateBalances(trip);
-  const getParticipantName = (id: string) => trip.participants.find(p => p.id === id)?.name || 'לא ידוע';
   const transactions = calculateSettlement(balances);
 
   return (
@@ -32,16 +33,16 @@ export const Balances = ({ trip, exchangeRate, onSelectParticipant, onSettleDebt
                 onClick={() => onSelectParticipant?.(id)}
                 className={`bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center ${onSelectParticipant ? 'cursor-pointer hover:bg-slate-50 transition-colors' : ''}`}
               >
-                <div className="font-bold text-slate-800">{getParticipantName(id)}</div>
+                <div className="font-bold text-slate-800">{getParticipantName(id, trip.participants, currentUserId)}</div>
                 <div className="flex items-center gap-3 pl-2">
                   <div className={`text-left ${isPositive ? 'text-emerald-600' : isNegative ? 'text-red-500' : 'text-slate-400'}`} dir="ltr">
                     <div className="font-bold">
-                      {isPositive ? '+' : ''}{formatAmount(balance)} {trip.tripCurrency}
+                      {isPositive ? '+' : ''}{formatAmount(balance)} <span className="text-[70%]">{trip.tripCurrency}</span>
                     </div>
                     <div className="text-xs mt-0.5 flex items-center gap-2">
                       {exchangeRate && trip.baseCurrency !== trip.tripCurrency && !isZero && (
                         <span className="opacity-60">
-                          ≈ {isPositive ? '+' : ''}{formatAmount(balance * exchangeRate)} {trip.baseCurrency}
+                          ≈ {isPositive ? '+' : ''}{formatAmount(balance * exchangeRate)} <span className="text-[70%]">{trip.baseCurrency}</span>
                         </span>
                       )}
                       <span className="opacity-80">
@@ -77,21 +78,21 @@ export const Balances = ({ trip, exchangeRate, onSelectParticipant, onSettleDebt
               {transactions.map((t, i) => (
                 <div key={i} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between gap-4">
                   <div className="flex-1 text-center font-medium text-slate-800 bg-slate-50 py-2 rounded-lg">
-                    {getParticipantName(t.from)}
+                    {getParticipantName(t.from, trip.participants, currentUserId)}
                   </div>
                   
                   <div className="flex flex-col items-center text-indigo-600 px-2" dir="ltr">
-                    <div className="font-bold whitespace-nowrap">{formatAmount(t.amount)} {trip.tripCurrency}</div>
+                    <div className="font-bold whitespace-nowrap">{formatAmount(t.amount)} <span className="text-[70%]">{trip.tripCurrency}</span></div>
                     <ArrowLeft className="w-5 h-5 my-1" />
                     {exchangeRate && trip.baseCurrency !== trip.tripCurrency && (
                       <div className="text-xs text-slate-400 whitespace-nowrap">
-                        ≈ {formatAmount(t.amount * exchangeRate)} {trip.baseCurrency}
+                        ≈ {formatAmount(t.amount * exchangeRate)} <span className="text-[70%]">{trip.baseCurrency}</span>
                       </div>
                     )}
                   </div>
                   
                   <div className="flex-1 text-center font-medium text-slate-800 bg-slate-50 py-2 rounded-lg">
-                    {getParticipantName(t.to)}
+                    {getParticipantName(t.to, trip.participants, currentUserId)}
                   </div>
 
                   {onSettleDebt && (

@@ -1,18 +1,22 @@
 import { Trip, Expense } from '../types';
+import { motion } from 'motion/react';
 import { ICON_MAP } from '../utils/categories';
 import { ArrowRightLeft, Pencil, Trash2, ArrowRight, Calendar, User, Users, FileText } from 'lucide-react';
 import { formatAmount } from '../utils/currency';
+import { getParticipantName } from '../utils/participants';
 
 type Props = {
+  key?: string;
   trip: Trip;
   expense: Expense;
   onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
   isReadOnly?: boolean;
+  currentUserId?: string | null;
 };
 
-export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isReadOnly = false }: Props) => {
+export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isReadOnly = false, currentUserId }: Props) => {
   const category = trip.categories.find(c => c.name === expense.tag);
   let Icon = category ? ICON_MAP[category.icon] : null;
   let iconColor = category?.color;
@@ -22,14 +26,18 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
     iconColor = '#f97316'; // orange-500
   }
 
-  const getParticipantName = (id: string) => trip.participants.find(p => p.id === id)?.name || 'לא ידוע';
-
   // Normalize payers for display
   const payers = expense.payers || 
     ((expense as any).paidBy ? [{ participantId: (expense as any).paidBy, amount: expense.amount }] : []);
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+      className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 relative"
+    >
       <div className="flex flex-col items-center mb-6 mt-2">
         <div 
           className="w-16 h-16 rounded-full flex items-center justify-center text-white shadow-md mb-4"
@@ -39,11 +47,11 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
         </div>
         <h2 className="text-2xl font-bold text-slate-800 text-center">{expense.description}</h2>
         <div className="text-3xl font-bold text-indigo-600 mt-2" dir="ltr">
-          {formatAmount(expense.amount)} {trip.tripCurrency}
+          {formatAmount(expense.amount)} <span className="text-[70%]">{trip.tripCurrency}</span>
         </div>
         {expense.originalCurrency && expense.originalCurrency !== trip.tripCurrency && expense.exchangeRate && (
           <div className="text-sm text-slate-400 mt-1" dir="ltr">
-            ({formatAmount(expense.amount / expense.exchangeRate)} {expense.originalCurrency})
+            ({formatAmount(expense.amount / expense.exchangeRate)} <span className="text-[70%]">{expense.originalCurrency}</span>)
           </div>
         )}
         <div className="flex items-center gap-2 mt-4 text-slate-500 bg-slate-50 px-3 py-1.5 rounded-full text-sm">
@@ -54,36 +62,40 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
 
       <div className="space-y-6">
         {/* Payers Section */}
-        <div>
-          <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-            <User className="w-4 h-4" />
-            מי שילם?
-          </h3>
-          <div className="bg-slate-50 rounded-xl p-4 space-y-2">
-            {payers.map((payer, idx) => (
-              <div key={idx} className="flex justify-between items-center">
-                <span className="text-slate-700 font-medium">{getParticipantName(payer.participantId)}</span>
-                <span className="text-slate-600" dir="ltr">{formatAmount(payer.amount)} {trip.tripCurrency}</span>
-              </div>
-            ))}
+        {trip.participants.length > 1 && (
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <User className="w-4 h-4" />
+              מי שילם?
+            </h3>
+            <div className="bg-slate-50 rounded-xl p-4 space-y-2">
+              {payers.map((payer, idx) => (
+                <div key={idx} className="flex justify-between items-center">
+                  <span className="text-slate-700 font-medium">{getParticipantName(payer.participantId, trip.participants, currentUserId)}</span>
+                  <span className="text-slate-600" dir="ltr">{formatAmount(payer.amount)} <span className="text-[70%]">{trip.tripCurrency}</span></span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Splits Section */}
-        <div>
-          <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-            <Users className="w-4 h-4" />
-            עבור מי?
-          </h3>
-          <div className="bg-slate-50 rounded-xl p-4 space-y-2">
-            {expense.splits.map((split, idx) => (
-              <div key={idx} className="flex justify-between items-center">
-                <span className="text-slate-700 font-medium">{getParticipantName(split.participantId)}</span>
-                <span className="text-slate-600" dir="ltr">{formatAmount(split.amount)} {trip.tripCurrency}</span>
-              </div>
-            ))}
+        {trip.participants.length > 1 && (
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+              <Users className="w-4 h-4" />
+              עבור מי?
+            </h3>
+            <div className="bg-slate-50 rounded-xl p-4 space-y-2">
+              {expense.splits.map((split, idx) => (
+                <div key={idx} className="flex justify-between items-center">
+                  <span className="text-slate-700 font-medium">{getParticipantName(split.participantId, trip.participants, currentUserId)}</span>
+                  <span className="text-slate-600" dir="ltr">{formatAmount(split.amount)} <span className="text-[70%]">{trip.tripCurrency}</span></span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Notes Section */}
         {expense.notes && (
@@ -117,6 +129,6 @@ export const ExpenseDetails = ({ trip, expense, onEdit, onDelete, onClose, isRea
           </button>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 };

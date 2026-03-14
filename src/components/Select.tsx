@@ -12,9 +12,10 @@ type Props = {
   options: Option[];
   placeholder?: string;
   className?: string;
+  onClick?: () => void;
 };
 
-export const Select = ({ value, onChange, options, placeholder = 'בחר...', className = '' }: Props) => {
+export const Select = ({ value, onChange, options, placeholder = 'בחר...', className = '', onClick }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -35,8 +36,11 @@ export const Select = ({ value, onChange, options, placeholder = 'בחר...', cl
     <div className={`relative ${className}`} ref={dropdownRef}>
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-3 border border-slate-200 rounded-xl bg-white text-right hover:border-indigo-500 transition-all outline-none focus:ring-2 focus:ring-indigo-500"
+        onClick={() => {
+          setIsOpen(!isOpen);
+          if (onClick) onClick();
+        }}
+        className="w-full h-[50px] flex items-center justify-between p-3 border border-slate-200 rounded-xl bg-white text-right hover:border-indigo-500 transition-all outline-none focus:ring-2 focus:ring-indigo-500"
       >
         <span className={`text-sm ${selectedOption ? 'text-slate-700 font-medium' : 'text-slate-400'}`}>
           {selectedOption ? selectedOption.label : placeholder}

@@ -1,5 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="100" fill="#4f46e5" />
-  <path d="M256 128 L384 384 L128 384 Z" fill="white" />
-  <circle cx="256" cy="200" r="40" fill="#fbbf24" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <circle cx="50" cy="50" r="50" fill="#f97316" />
+  <g transform="translate(10, 10) scale(0.8)">
+    <path d="M 35 25 L 35 12 C 35 10 37 8 40 8 L 60 8 C 63 8 65 10 65 12 L 65 25" fill="none" stroke="#1e293b" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+    <rect x="30" y="6" width="40" height="6" rx="3" fill="#1e293b" />
+    <circle cx="30" cy="85" r="6" fill="#1e293b" />
+    <circle cx="70" cy="85" r="6" fill="#1e293b" />
+    <rect x="20" y="25" width="60" height="60" rx="6" fill="#bef264" stroke="#1e293b" stroke-width="6" stroke-linejoin="round" />
+    <line x1="32" y1="35" x2="32" y2="75" stroke="#1e293b" stroke-width="4" stroke-linecap="round" />
+    <line x1="44" y1="35" x2="44" y2="75" stroke="#1e293b" stroke-width="4" stroke-linecap="round" />
+    <line x1="56" y1="35" x2="56" y2="75" stroke="#1e293b" stroke-width="4" stroke-linecap="round" />
+    <line x1="68" y1="35" x2="68" y2="75" stroke="#1e293b" stroke-width="4" stroke-linecap="round" />
+    <g transform="translate(75, 75) scale(1.1)">
+      <circle cx="0" cy="0" r="22" fill="#ffffff" />
+      <circle cx="0" cy="0" r="20" fill="#fde68a" stroke="#1e293b" stroke-width="5" />
+      <circle cx="0" cy="0" r="14" fill="#fcd34d" stroke="#1e293b" stroke-width="2" />
+      <text x="0" y="8" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#1e293b" text-anchor="middle">$</text>
+    </g>
+  </g>
 </svg>

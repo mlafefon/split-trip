@@ -16,8 +16,10 @@ import { DEFAULT_CATEGORIES } from '../utils/categories';
 
 export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) => {
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [archivedTrips, setArchivedTrips] = useState<Trip[]>([]);
   const [currentTrip, setCurrentTrip] = useState<Trip | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingArchived, setLoadingArchived] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [canEdit, setCanEdit] = useState(false);
 
@@ -33,13 +35,22 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
 
       try {
         const tripsData: Trip[] = [];
+        const validIds: string[] = [];
+        
         for (const id of savedIds) {
           const docRef = doc(db, 'trips', id);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             tripsData.push({ id: docSnap.id, ...docSnap.data() } as Trip);
+            validIds.push(id);
           }
         }
+        
+        // Clean up localStorage if any trips were deleted from the server
+        if (validIds.length !== savedIds.length) {
+          localStorage.setItem('tripIds', JSON.stringify(validIds));
+        }
+        
         setTrips(tripsData);
       } catch (err) {
         console.error('Error loading trips:', err);
@@ -56,7 +67,9 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
 
   // Subscribe to a specific trip if ID is provided
   useEffect(() => {
-    if (!tripId) return;
+    if (!tripId) {
+      return;
+    }
 
     setLoading(true);
     const unsubscribe = onSnapshot(doc(db, 'trips', tripId), (doc) => {
@@ -88,9 +101,10 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
         
         setCanEdit(!isReadOnly && hasValidToken);
 
-        // Save to local history if not already there
+        // Save to local history if not already there, AND it's not archived
         const savedIds = JSON.parse(localStorage.getItem('tripIds') || '[]');
-        if (!savedIds.includes(tripId)) {
+        const archivedIds = JSON.parse(localStorage.getItem('archivedTripIds') || '[]');
+        if (!savedIds.includes(tripId) && !archivedIds.includes(tripId)) {
           localStorage.setItem('tripIds', JSON.stringify([...savedIds, tripId]));
         }
       } else {
@@ -113,9 +127,6 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
       const editCode = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
       const tripWithCode = { ...trip, editCode };
 
-      // Create main trip document
-      await setDoc(doc(db, 'trips', trip.id), tripWithCode);
-      
       // Save ID to local storage for history
       const savedIds = JSON.parse(localStorage.getItem('tripIds') || '[]');
       if (!savedIds.includes(trip.id)) {
@@ -127,13 +138,28 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
       localTokens[trip.id] = editCode;
       localStorage.setItem('tripTokens', JSON.stringify(localTokens));
 
+      // Save current user (creator) to local storage
+      if (trip.participants.length > 0) {
+        const currentUserIds = JSON.parse(localStorage.getItem('tripCurrentUser') || '{}');
+        currentUserIds[trip.id] = trip.participants[0].id;
+        localStorage.setItem('tripCurrentUser', JSON.stringify(currentUserIds));
+      }
+
       // Optimistically update local state so we can navigate immediately
       setTrips(prev => [tripWithCode, ...prev]);
 
+      // Create main trip document
+      // If offline, this might throw or wait depending on Firebase config.
+      // We await it, but if it fails, we catch it below.
+      await setDoc(doc(db, 'trips', trip.id), tripWithCode);
+      
       return trip.id;
     } catch (err) {
       console.error('Error creating trip:', err);
-      throw err;
+      // Even if Firebase fails (e.g., offline), we've already saved it locally.
+      // Firebase will sync it when online if persistence is enabled.
+      // We resolve the promise so the UI can proceed.
+      return trip.id;
     }
   };
 
@@ -164,14 +190,80 @@ export const useFirebaseTrips = (tripId?: string, isReadOnly: boolean = false) =
     setTrips(prev => prev.filter(t => t.id !== id));
   };
 
+  const archiveTrip = (id: string) => {
+    const savedIds = JSON.parse(localStorage.getItem('tripIds') || '[]');
+    const newIds = savedIds.filter((tid: string) => tid !== id);
+    localStorage.setItem('tripIds', JSON.stringify(newIds));
+    
+    const archivedIds = JSON.parse(localStorage.getItem('archivedTripIds') || '[]');
+    if (!archivedIds.includes(id)) {
+      localStorage.setItem('archivedTripIds', JSON.stringify([...archivedIds, id]));
+    }
+    
+    setTrips(prev => prev.filter(t => t.id !== id));
+  };
+
+  const unarchiveTrip = async (id: string) => {
+    const archivedIds = JSON.parse(localStorage.getItem('archivedTripIds') || '[]');
+    const newArchivedIds = archivedIds.filter((tid: string) => tid !== id);
+    localStorage.setItem('archivedTripIds', JSON.stringify(newArchivedIds));
+    
+    const savedIds = JSON.parse(localStorage.getItem('tripIds') || '[]');
+    if (!savedIds.includes(id)) {
+      localStorage.setItem('tripIds', JSON.stringify([id, ...savedIds]));
+    }
+    
+    setArchivedTrips(prev => prev.filter(t => t.id !== id));
+    
+    try {
+      const docRef = doc(db, 'trips', id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        setTrips(prev => [{ id: docSnap.id, ...docSnap.data() } as Trip, ...prev]);
+      }
+    } catch (err) {
+      console.error('Error fetching unarchived trip:', err);
+    }
+  };
+
+  const loadArchivedTrips = async () => {
+    setLoadingArchived(true);
+    const archivedIds = JSON.parse(localStorage.getItem('archivedTripIds') || '[]');
+    try {
+      const tripsData: Trip[] = [];
+      const validIds: string[] = [];
+      for (const id of archivedIds) {
+        const docRef = doc(db, 'trips', id);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          tripsData.push({ id: docSnap.id, ...docSnap.data() } as Trip);
+          validIds.push(id);
+        }
+      }
+      if (validIds.length !== archivedIds.length) {
+        localStorage.setItem('archivedTripIds', JSON.stringify(validIds));
+      }
+      setArchivedTrips(tripsData);
+    } catch (err) {
+      console.error('Error loading archived trips:', err);
+    } finally {
+      setLoadingArchived(false);
+    }
+  };
+
   return {
     trips,
+    archivedTrips,
     currentTrip,
     loading,
+    loadingArchived,
     error,
     createTrip,
     updateTrip,
     deleteTrip,
+    archiveTrip,
+    unarchiveTrip,
+    loadArchivedTrips,
     canEdit
   };
 };

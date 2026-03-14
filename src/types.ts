@@ -30,9 +30,21 @@ export type Category = {
   color: string;
 };
 
+export type ActivityLogAction = 'CREATE_TRIP' | 'UPDATE_TRIP' | 'ADD_EXPENSE' | 'UPDATE_EXPENSE' | 'DELETE_EXPENSE' | 'ADD_PARTICIPANT' | 'REMOVE_PARTICIPANT';
+
+export type ActivityLogEntry = {
+  id: string;
+  participantId: string;
+  action: ActivityLogAction;
+  timestamp: string;
+  details?: string;
+  entityId?: string;
+};
+
 export type Trip = {
   id: string;
   destination: string;
+  icon?: string;
   baseCurrency: string;
   tripCurrency: string;
   participants: Participant[];
@@ -41,6 +53,7 @@ export type Trip = {
   createdAt: string;
   notes?: string;
   editCode?: string; // Secret code for editing permissions
+  activityLog?: ActivityLogEntry[];
 };
 
 export type ExchangeRates = {

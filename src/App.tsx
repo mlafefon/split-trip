@@ -1,18 +1,60 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { TripList } from './components/TripList';
 import { TripView } from './components/TripView';
 import { TripForm } from './components/TripForm';
 import { useFirebaseTrips } from './hooks/useFirebaseTrips';
-import { ChevronRight, Loader2, Share2, Pencil } from 'lucide-react';
+import { ChevronRight, Loader2, Share2, Pencil, WifiOff, MoreVertical, Archive, Trash2, Tags, Activity } from 'lucide-react';
 import { ShareDialog } from './components/ShareDialog';
 import { InstallPrompt } from './components/InstallPrompt';
+import { ConfirmDialog } from './components/ConfirmDialog';
+import { AboutDialog } from './components/AboutDialog';
+import { CategoryEditor } from './components/CategoryEditor';
+import { ActivityLog } from './components/ActivityLog';
+import { AppIcon } from './components/AppIcon';
+import metadata from '../metadata.json';
+
+import { ExportReport } from './components/ExportReport';
 
 export default function App() {
   // Check for trip ID in URL query params
   const [urlTripId, setUrlTripId] = useState<string | null>(null);
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const [isExportView, setIsExportView] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [isEditingTrip, setIsEditingTrip] = useState(false);
+  const [isEditingCategories, setIsEditingCategories] = useState(false);
+  const [isViewingActivity, setIsViewingActivity] = useState(false);
+  const [viewingExpenseIdFromActivity, setViewingExpenseIdFromActivity] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showVibeModal, setShowVibeModal] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -24,25 +66,74 @@ export default function App() {
       if (view === 'readonly') {
         setIsReadOnly(true);
       }
+      if (view === 'export') {
+        setIsExportView(true);
+      }
     }
   }, []);
 
   const { 
     trips, 
+    archivedTrips,
     currentTrip: firebaseTrip, 
     createTrip, 
     updateTrip, 
     deleteTrip,
+    archiveTrip,
+    unarchiveTrip,
+    loadArchivedTrips,
     loading,
+    loadingArchived,
     canEdit
   } = useFirebaseTrips(urlTripId || undefined, isReadOnly);
 
   const [currentTripId, setCurrentTripId] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [backHandler, setBackHandler] = useState<(() => boolean) | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // If we have a URL trip ID, that's our current trip
   const activeTrip = urlTripId ? firebaseTrip : trips.find(t => t.id === currentTripId);
+
+  // Manage current user ID for the active trip
+  useLayoutEffect(() => {
+    if (activeTrip) {
+      const currentUserIds = JSON.parse(localStorage.getItem('tripCurrentUser') || '{}');
+      const savedUserId = currentUserIds[activeTrip.id];
+      
+      // Validate saved user ID against current participants
+      if (savedUserId && (savedUserId === 'none' || activeTrip.participants.some(p => p.id === savedUserId))) {
+        if (currentUserId !== savedUserId) {
+          setCurrentUserId(savedUserId);
+        }
+      } else {
+        if (currentUserId !== null) {
+          setCurrentUserId(null);
+        }
+        if (savedUserId) {
+          // Clean up invalid ID
+          delete currentUserIds[activeTrip.id];
+          localStorage.setItem('tripCurrentUser', JSON.stringify(currentUserIds));
+        }
+      }
+    } else {
+      if (currentUserId !== null) {
+        setCurrentUserId(null);
+      }
+    }
+  }, [activeTrip, currentUserId]);
+
+  const handleSetCurrentUserId = (userId: string | null) => {
+    if (!activeTrip) return;
+    setCurrentUserId(userId);
+    const currentUserIds = JSON.parse(localStorage.getItem('tripCurrentUser') || '{}');
+    if (userId) {
+      currentUserIds[activeTrip.id] = userId;
+    } else {
+      delete currentUserIds[activeTrip.id];
+    }
+    localStorage.setItem('tripCurrentUser', JSON.stringify(currentUserIds));
+  };
 
   // Calculate canEdit for the active trip (whether from URL or local list)
   const activeTripCanEdit = (() => {
@@ -138,12 +229,46 @@ export default function App() {
   };
 
   const handleBack = () => {
-    window.history.back();
+    if (isCreating) {
+      setIsCreating(false);
+      return;
+    }
+    
+    // If we have a backHandler (modal open), let history.back() trigger popstate to close it
+    if (backHandler) {
+      window.history.back();
+      return;
+    }
+
+    // If we are viewing a trip, we want to go back to the list.
+    // If the user opened the app via a direct link to a trip, window.history.length might be small (e.g., 1 or 2).
+    // Using history.back() in that case would exit the app.
+    // To prevent exiting the app, we can just clear the URL state manually and push the root URL.
+    modalHistoryPushed.current = false;
+    window.history.pushState({}, '', window.location.pathname);
+    setUrlTripId(null);
+    setCurrentTripId(null);
   };
 
   const handleSetBackHandler = useCallback((handler: (() => boolean) | null) => {
     setBackHandler(() => handler);
   }, []);
+
+  useEffect(() => {
+    if (isEditingCategories) {
+      handleSetBackHandler(() => {
+        setIsEditingCategories(false);
+        return true;
+      });
+    } else if (isViewingActivity) {
+      handleSetBackHandler(() => {
+        setIsViewingActivity(false);
+        return true;
+      });
+    } else {
+      handleSetBackHandler(null);
+    }
+  }, [isEditingCategories, isViewingActivity, handleSetBackHandler]);
 
   const handleShare = () => {
     if (!activeTrip) return;
@@ -161,26 +286,37 @@ export default function App() {
     );
   }
 
+  if (isExportView && activeTrip) {
+    return <ExportReport trip={activeTrip} />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-24" dir="rtl">
       <header className="bg-indigo-600 text-white p-4 shadow-md sticky top-0 z-20">
+        {isOffline && (
+          <div className="absolute top-full left-0 right-0 bg-yellow-500 text-yellow-950 text-xs font-medium py-1 px-4 text-center flex items-center justify-center gap-2 shadow-sm z-10">
+            <WifiOff className="w-3 h-3" />
+            מצב לא מקוון - הנתונים יסונכרנו כשהחיבור יחזור
+          </div>
+        )}
         <div className="max-w-xl mx-auto flex items-center justify-between relative">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             {(activeTrip || isCreating) && (
               <button 
                 onClick={handleBack}
-                className="p-1 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                className="p-1 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors shrink-0"
                 title="חזור"
               >
                 <ChevronRight className="w-6 h-6" />
               </button>
             )}
             <h1 
-              className={`text-xl font-bold truncate max-w-[200px] ${activeTrip || isCreating ? 'cursor-pointer hover:opacity-80' : ''}`}
+              className={`text-xl font-bold flex items-center gap-2 min-w-0 ${activeTrip || isCreating ? 'cursor-pointer hover:opacity-80' : ''}`}
               onClick={() => {
                 if (activeTrip || isCreating) {
                   // Force full reset to home
                   if (backHandler) setBackHandler(null);
+                  modalHistoryPushed.current = false;
                   window.history.pushState({}, '', window.location.pathname);
                   setUrlTripId(null);
                   setCurrentTripId(null);
@@ -188,71 +324,217 @@ export default function App() {
                 }
               }}
             >
-              {activeTrip ? activeTrip.destination : isCreating ? 'טיול חדש' : 'ניהול תקציב טיולים'}
+              {!activeTrip && !isCreating && <AppIcon className="w-8 h-8" />}
+              {activeTrip && <span className="shrink-0">{activeTrip.icon || '✈️'}</span>}
+              <span className="truncate">
+                {activeTrip ? activeTrip.destination : isCreating ? 'טיול חדש' : 'ניהול תקציב טיולים'}
+              </span>
             </h1>
           </div>
           
-          <div className="flex items-center gap-2">
-            {activeTrip && !isCreating && activeTripCanEdit && !isEditingTrip && (
-              <button 
-                onClick={() => setIsEditingTrip(true)}
-                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                title="ערוך פרטי טיול"
+          <div className="flex items-center gap-2 shrink-0">
+            {!activeTrip && !isCreating && (
+              <span 
+                className="text-[10px] text-white/50 font-mono cursor-pointer select-none" 
+                dir="ltr"
+                onDoubleClick={() => setShowVibeModal(true)}
               >
-                <Pencil className="w-5 h-5" />
-              </button>
+                v{metadata.version}
+              </span>
             )}
             {activeTrip && !isCreating && (
-              <button 
-                onClick={handleShare}
-                className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
-                title="שתף טיול"
-              >
-                <Share2 className="w-5 h-5" />
-              </button>
+              <div className="relative" ref={menuRef}>
+                <button 
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  className="p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                  title="תפריט"
+                >
+                  <MoreVertical className="w-5 h-5" />
+                </button>
+                
+                {isMenuOpen && (
+                  <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-slate-100 py-1 z-50 text-slate-800">
+                    <button 
+                      onClick={() => { setIsMenuOpen(false); handleShare(); }}
+                      className="w-full text-right px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm"
+                    >
+                      <Share2 className="w-4 h-4 text-slate-500" />
+                      שיתוף טיול
+                    </button>
+                    
+                    {activeTripCanEdit && !isEditingTrip && (
+                      <>
+                        <button 
+                          onClick={() => { setIsMenuOpen(false); setIsEditingTrip(true); }}
+                          className="w-full text-right px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm"
+                        >
+                          <Pencil className="w-4 h-4 text-slate-500" />
+                          עריכת טיול
+                        </button>
+                        <button 
+                          onClick={() => { setIsMenuOpen(false); setIsEditingCategories(true); }}
+                          className="w-full text-right px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm"
+                        >
+                          <Tags className="w-4 h-4 text-slate-500" />
+                          עריכת קטגוריות
+                        </button>
+                        <button 
+                          onClick={() => { setIsMenuOpen(false); setIsViewingActivity(true); }}
+                          className="w-full text-right px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm"
+                        >
+                          <Activity className="w-4 h-4 text-slate-500" />
+                          פעילות
+                        </button>
+                      </>
+                    )}
+                    
+                    <button 
+                      onClick={() => { 
+                        setIsMenuOpen(false); 
+                        archiveTrip(activeTrip.id);
+                        if (backHandler) setBackHandler(null);
+                        modalHistoryPushed.current = false;
+                        window.history.pushState({}, '', window.location.pathname);
+                        setUrlTripId(null);
+                        setCurrentTripId(null);
+                      }}
+                      className="w-full text-right px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm"
+                    >
+                      <Archive className="w-4 h-4 text-slate-500" />
+                      העבר לארכיון
+                    </button>
+
+                    {activeTripCanEdit && (
+                      <button 
+                        onClick={() => { setIsMenuOpen(false); setShowDeleteConfirm(true); }}
+                        className="w-full text-right px-4 py-3 hover:bg-red-50 flex items-center gap-3 text-sm text-red-600 border-t border-slate-100"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                        מחיקת טיול
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
       </header>
 
       <main className="p-4 max-w-xl mx-auto mt-2">
-        {isCreating ? (
-          <TripForm 
-            onSave={async (trip) => {
-              await createTrip(trip);
-              setIsCreating(false);
-              // Optionally navigate to the new trip immediately
-              setCurrentTripId(trip.id);
-            }} 
-            onCancel={() => setIsCreating(false)} 
-          />
-        ) : activeTrip ? (
-          <>
-            <TripView 
-              trip={activeTrip} 
-              updateTrip={updateTrip} 
-              setBackHandler={handleSetBackHandler}
-              isReadOnly={!activeTripCanEdit}
-              isEditing={isEditingTrip}
-              onEditChange={setIsEditingTrip}
-            />
-            <ShareDialog 
-              isOpen={showShareDialog}
-              onClose={() => setShowShareDialog(false)}
-              tripId={activeTrip.id}
-              tripName={activeTrip.destination}
-              editCode={activeTrip.editCode}
-              canEdit={activeTripCanEdit}
-            />
-          </>
-        ) : (
-          <TripList 
-            trips={trips} 
-            onSelect={handleSelectTrip} 
-            onCreateNew={() => setIsCreating(true)} 
-            onDelete={deleteTrip} 
-          />
-        )}
+        <AboutDialog 
+          isOpen={showVibeModal}
+          onClose={() => setShowVibeModal(false)}
+        />
+        <ConfirmDialog 
+          isOpen={showDeleteConfirm}
+          title="מחיקת טיול"
+          message="האם אתה בטוח שברצונך למחוק טיול זה? הפעולה תסיר אותו מהרשימה שלך."
+          onConfirm={() => {
+            if (activeTrip) {
+              deleteTrip(activeTrip.id);
+              setShowDeleteConfirm(false);
+              if (backHandler) setBackHandler(null);
+              modalHistoryPushed.current = false;
+              window.history.pushState({}, '', window.location.pathname);
+              setUrlTripId(null);
+              setCurrentTripId(null);
+            }
+          }}
+          onCancel={() => setShowDeleteConfirm(false)}
+        />
+
+        <AnimatePresence mode="wait">
+          {isCreating ? (
+            <motion.div key="creating" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+              <TripForm 
+                onSave={(trip) => {
+                  // Fire and forget the createTrip call so the UI doesn't block if offline
+                  createTrip(trip).catch(error => {
+                    console.error("Failed to create trip in Firebase:", error);
+                  });
+                  
+                  setIsCreating(false);
+                  // Navigate to the new trip immediately
+                  handleSelectTrip(trip.id);
+                }} 
+                onCancel={() => setIsCreating(false)} 
+              />
+            </motion.div>
+          ) : activeTrip && isEditingCategories ? (
+            <motion.div key="editing-categories" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+              <CategoryEditor
+                categories={activeTrip.categories}
+                onSave={async (newCategories) => {
+                  await updateTrip({ 
+                    ...activeTrip, 
+                    categories: newCategories,
+                    activityLog: [
+                      ...(activeTrip.activityLog || []),
+                      {
+                        id: crypto.randomUUID(),
+                        participantId: currentUserId || activeTrip.participants[0].id,
+                        action: 'UPDATE_TRIP',
+                        timestamp: new Date().toISOString(),
+                        details: `עדכן/ה את קטגוריות הטיול`
+                      }
+                    ]
+                  });
+                  setIsEditingCategories(false);
+                }}
+                onClose={() => setIsEditingCategories(false)}
+              />
+            </motion.div>
+          ) : activeTrip && isViewingActivity ? (
+            <motion.div key="viewing-activity" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+              <ActivityLog
+                trip={activeTrip}
+                onClose={() => setIsViewingActivity(false)}
+                currentUserId={currentUserId}
+                onExpenseClick={(expenseId) => {
+                  setViewingExpenseIdFromActivity(expenseId);
+                  setIsViewingActivity(false);
+                }}
+              />
+            </motion.div>
+          ) : activeTrip ? (
+            <motion.div key="trip-view" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+              <TripView 
+                trip={activeTrip} 
+                updateTrip={updateTrip} 
+                setBackHandler={handleSetBackHandler}
+                isReadOnly={!activeTripCanEdit}
+                isEditing={isEditingTrip}
+                onEditChange={setIsEditingTrip}
+                currentUserId={currentUserId}
+                setCurrentUserId={handleSetCurrentUserId}
+                initialViewingExpenseId={viewingExpenseIdFromActivity}
+                onClearInitialViewingExpenseId={() => setViewingExpenseIdFromActivity(null)}
+              />
+              <ShareDialog 
+                isOpen={showShareDialog}
+                onClose={() => setShowShareDialog(false)}
+                tripId={activeTrip.id}
+                tripName={activeTrip.destination}
+                editCode={activeTrip.editCode}
+                canEdit={activeTripCanEdit}
+              />
+            </motion.div>
+          ) : (
+            <motion.div key="trip-list" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}>
+              <TripList 
+                trips={trips} 
+                archivedTrips={archivedTrips}
+                loadingArchived={loadingArchived}
+                onSelect={handleSelectTrip} 
+                onCreateNew={() => setIsCreating(true)} 
+                onDelete={deleteTrip} 
+                onLoadArchived={loadArchivedTrips}
+                onUnarchive={unarchiveTrip}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </main>
       
       <InstallPrompt />
